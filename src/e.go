@@ -13,6 +13,7 @@ var buffer = [][]rune{}
 var ROWS, COLS int
 var offsetX, offsetY, currentRow, currentCol int
 var source_file string
+var modified bool
 
 func read_file(filename string) {
 	file, err := os.Open(filename)
@@ -36,9 +37,6 @@ func read_file(filename string) {
 
 		lineNumber++
 	}
-
-	//if lineNumber == 0 { buffer = append(buffer, []rune{})
-	//} else if err := scanner.Err(); err != nil { fmt.Println("111Error:", err) }
 }
 
 func write_file(filename string) {
@@ -53,7 +51,7 @@ func write_file(filename string) {
       _, err = writer.WriteString(writeLine)
       if err != nil { fmt.Println("Error:", err) }
   }
-
+  modified = false
   writer.Flush()
 }
 
@@ -134,18 +132,22 @@ func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
 }
 
 func display_status_bar() {
-  status_bar := strings.Repeat(" ", 3) + strconv.Itoa(currentRow) + " " + 
-                                         strconv.Itoa(offsetY+ROWS)
-  print_message(0, ROWS, termbox.ColorBlack, termbox.ColorWhite, status_bar)
+  file_status := " " + source_file + " - " + strconv.Itoa(len(buffer)) + " lines"
+  if modified { file_status += " modified "
+  } else { file_status += " saved" }
+  cursor := " Row " + strconv.Itoa(currentRow) + ", Col " + strconv.Itoa(currentCol) + " "
+  spaces := strings.Repeat(" ", COLS - len(file_status) - len(cursor))
+  message := file_status + spaces + cursor
+  print_message(0, ROWS, termbox.ColorBlack, termbox.ColorWhite, message)
 }
 
 func get_key() termbox.Event {
   var keyEvent termbox.Event
   switch event := termbox.PollEvent(); event.Type {
-	  case termbox.EventKey: keyEvent = event
-	  case termbox.EventError: panic(event.Err)
-	}
-	return keyEvent
+	   case termbox.EventKey: keyEvent = event
+	   case termbox.EventError: panic(event.Err)
+ 	}
+	 return keyEvent
 }
 
 func process_keypress() {
@@ -154,18 +156,18 @@ func process_keypress() {
     termbox.Close()
     os.Exit(0)
   } else if keyEvent.Ch != 0 {
-	  insert_rune(keyEvent)
+	  insert_rune(keyEvent); modified = true
   } else {
 	  switch keyEvent.Key {
-      case termbox.KeySpace: insert_rune(keyEvent)
-      case termbox.KeyEnter: insert_line()
-      case termbox.KeyBackspace: delete_rune()
-      case termbox.KeyBackspace2: delete_rune()
+     case termbox.KeySpace: insert_rune(keyEvent); modified = true
+     case termbox.KeyEnter: insert_line(); modified = true
+     case termbox.KeyBackspace: delete_rune(); modified = true
+     case termbox.KeyBackspace2: delete_rune(); modified = true
 	    case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
 	    case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
 	    case termbox.KeyHome: currentCol = 0
 	    case termbox.KeyEnd: currentCol = len(buffer[currentRow])
-	    case termbox.KeyPgup: if currentRow != 0 { currentRow -= int(ROWS/2) }
+	    case termbox.KeyPgup: if currentRow - int(ROWS/2) > 0 { currentRow -= int(ROWS/2) }
 	    case termbox.KeyPgdn: if currentRow + int(ROWS/2) < len(buffer)-1 { currentRow += int(ROWS/2) }
 	    case termbox.KeyArrowLeft:
 	      if currentCol != 0 {
