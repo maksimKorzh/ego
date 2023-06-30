@@ -142,6 +142,10 @@ func process_keypress() {
       case termbox.KeyBackspace2: delete_rune()
 	    case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
 	    case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
+	    case termbox.KeyHome: currentCol = 0
+	    case termbox.KeyEnd: currentCol = len(buffer[currentRow])
+	    case termbox.KeyPgup: if currentRow != 0 { currentRow -= int(ROWS/2) }
+	    case termbox.KeyPgdn: if currentRow + int(ROWS/2) < len(buffer)-1 { currentRow += int(ROWS/2) }
 	    case termbox.KeyArrowLeft:
 	      if currentCol != 0 {
 	        currentCol --
@@ -156,7 +160,6 @@ func process_keypress() {
 	        currentRow += 1
 	        currentCol = 0
 	      }
-	      
 	    //case termbox.KeyCtrlC:
 			//	termbox.Close()
 		//		os.Exit(0)
