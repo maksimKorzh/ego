@@ -4,17 +4,19 @@ import "os"
 import "bufio"
 //import "time"
 import "fmt"
-//import "strconv"
+import "strconv"
+import "strings"
 
 import "github.com/nsf/termbox-go"
 import "github.com/mattn/go-runewidth"
 
-//var buffer = [][]rune{{'a', 'b', 'c'}, {'1', '2', '3'}}
+// VARS
 var buffer = [][]rune{}
 var ROWS, COLS int
 var offsetX, offsetY, currentRow, currentCol int
 var src string
 
+// SYSTEM
 func read_file(filename string) {
 	file, err := os.Open(filename)
 	if err != nil { fmt.Println("Error:", err); return }
@@ -34,37 +36,35 @@ func read_file(filename string) {
 	if err := scanner.Err(); err != nil { fmt.Println("Error:", err) }
 }
 
-func scroll_buffer() {
-  if currentRow < offsetY { offsetY = currentRow }
-  if currentCol < offsetX { offsetX = currentCol }
-  if currentRow >= offsetY + ROWS { offsetY = currentRow - ROWS }
-  if currentCol >= offsetX + COLS { offsetX = currentCol - COLS }
-}
-
+// EDITOR
 func display_buffer() {
-  ROWS, COLS = termbox.Size()
+  
   var row, col int
   for row = 0; row < ROWS; row++ {
     bufferRow := row + offsetY
     for col = 0; col < COLS; col++ {
       bufferCol := col + offsetX
-      if row < len(buffer) && col < len(buffer[row]) {
+      if bufferRow >= 0 &&  bufferRow < len(buffer) &&
+         bufferCol < len(buffer[bufferRow]) {
         termbox.SetChar(col, row, buffer[bufferRow][bufferCol])
       }
     }
     termbox.SetChar(col, row, '\n')
   }
-  termbox.SetCursor(currentCol - offsetX, currentRow - offsetY)
-  termbox.Flush()
+  
 }
 
-func get_key() termbox.Event {
-  var keyEvent termbox.Event
-  switch event := termbox.PollEvent(); event.Type {
-	  case termbox.EventKey: keyEvent = event
-	  case termbox.EventError: panic(event.Err)
-	}
-	return keyEvent
+func display_status_bar() {
+  status_bar := strings.Repeat(" ", 3) + strconv.Itoa(currentRow) + " " + 
+                                         strconv.Itoa(offsetY+ROWS)
+  print_message(0, ROWS, termbox.ColorBlack, termbox.ColorWhite, status_bar)
+}
+
+func scroll_buffer() {
+  if currentRow < offsetY { offsetY = currentRow }
+  //if currentCol < offsetX { offsetX = currentCol }
+  if currentRow >= offsetY + ROWS { offsetY = currentRow - ROWS+1 }
+  //if currentCol >= offsetX + COLS { offsetX = currentCol - COLS }
 }
 
 func process_keypress() {
@@ -82,39 +82,51 @@ func process_keypress() {
   }
 }
 
-func run_editor() {
-  for {    
-    scroll_buffer()
-    display_buffer()
-	  process_keypress()
-  }
-}
 
-
-func main() {
-	err := termbox.Init()
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+// MISC
+func get_key() termbox.Event {
+  var keyEvent termbox.Event
+  switch event := termbox.PollEvent(); event.Type {
+	  case termbox.EventKey: keyEvent = event
+	  case termbox.EventError: panic(event.Err)
 	}
-
-  read_file("e.go")
-  run_editor()
-	
-	
+	return keyEvent
 }
 
-
-
-// This function is often useful:
-func tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
+func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
 	for _, c := range msg {
 		termbox.SetCell(x, y, c, fg, bg)
 		x += runewidth.RuneWidth(c)
 	}
 }
 
+// MAIN
+func run_editor() {
+  err := termbox.Init()
+	if err != nil { fmt.Println(err); os.Exit(1) }
+  read_file("e.go")
+  for {    
+    COLS, ROWS = termbox.Size(); ROWS--;
+    termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+    
+    scroll_buffer()
+    display_buffer()    
+    display_status_bar()
+
+	  
+	  termbox.SetCursor(currentCol - offsetX, currentRow - offsetY)
+	  termbox.Flush()
+	  
+	  process_keypress()
+	  
+	  
+  }
+}
+
+
+func main() {
+	run_editor()
+}
 
 
 
