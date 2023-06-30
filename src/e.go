@@ -9,6 +9,7 @@ import "strings"
 import "github.com/nsf/termbox-go"
 import "github.com/mattn/go-runewidth"
 
+var mode int
 var buffer = [][]rune{}
 var ROWS, COLS int
 var offsetX, offsetY, currentRow, currentCol int
@@ -132,12 +133,16 @@ func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
 }
 
 func display_status_bar() {
+  var mode_status string
+  if mode > 0 { mode_status = " EDIT: "
+  } else { mode_status = " VIEW: " }
   file_status := " " + source_file + " - " + strconv.Itoa(len(buffer)) + " lines"
   if modified { file_status += " modified "
   } else { file_status += " saved" }
-  cursor := " Row " + strconv.Itoa(currentRow) + ", Col " + strconv.Itoa(currentCol) + " "
-  spaces := strings.Repeat(" ", COLS - len(file_status) - len(cursor))
-  message := file_status + spaces + cursor
+  cursor_status := " Row " + strconv.Itoa(currentRow) + ", Col " + strconv.Itoa(currentCol) + " "
+  used_space := len(mode_status) + len(file_status) + len(cursor_status)
+  spaces := strings.Repeat(" ", COLS - used_space)
+  message := mode_status + file_status + spaces + cursor_status
   print_message(0, ROWS, termbox.ColorBlack, termbox.ColorWhite, message)
 }
 
@@ -152,23 +157,27 @@ func get_key() termbox.Event {
 
 func process_keypress() {
   keyEvent := get_key()
-  if keyEvent.Key == termbox.KeyEsc {
-    termbox.Close()
-    os.Exit(0)
+  if keyEvent.Key == termbox.KeyEsc { mode = 0
   } else if keyEvent.Ch != 0 {
-	  insert_rune(keyEvent); modified = true
+	   if mode == 1 { insert_rune(keyEvent); modified = true
+    } else {
+      switch keyEvent.Ch {
+        case 'q': termbox.Close(); os.Exit(0)
+        case 'e': mode = 1
+      }
+    }
   } else {
 	  switch keyEvent.Key {
-     case termbox.KeySpace: insert_rune(keyEvent); modified = true
-     case termbox.KeyEnter: insert_line(); modified = true
-     case termbox.KeyBackspace: delete_rune(); modified = true
-     case termbox.KeyBackspace2: delete_rune(); modified = true
+     case termbox.KeySpace: if mode == 1 { insert_rune(keyEvent); modified = true }
+     case termbox.KeyEnter: if mode == 1 { insert_line(); modified = true }
+     case termbox.KeyBackspace: if mode == 1 {delete_rune(); modified = true }
+     case termbox.KeyBackspace2: if mode == 1 { delete_rune(); modified = true }
 	    case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
 	    case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
 	    case termbox.KeyHome: currentCol = 0
 	    case termbox.KeyEnd: currentCol = len(buffer[currentRow])
-	    case termbox.KeyPgup: if currentRow - int(ROWS/2) > 0 { currentRow -= int(ROWS/2) }
-	    case termbox.KeyPgdn: if currentRow + int(ROWS/2) < len(buffer)-1 { currentRow += int(ROWS/2) }
+	    case termbox.KeyPgup: if currentRow - int(ROWS/4) > 0 { currentRow -= int(ROWS/4) }
+	    case termbox.KeyPgdn: if currentRow + int(ROWS/4) < len(buffer)-1 { currentRow += int(ROWS/4) }
 	    case termbox.KeyArrowLeft:
 	      if currentCol != 0 {
 	        currentCol --
