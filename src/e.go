@@ -62,9 +62,9 @@ func display_status_bar() {
 
 func scroll_buffer() {
   if currentRow < offsetY { offsetY = currentRow }
-  //if currentCol < offsetX { offsetX = currentCol }
+  if currentCol < offsetX { offsetX = currentCol }
   if currentRow >= offsetY + ROWS { offsetY = currentRow - ROWS+1 }
-  //if currentCol >= offsetX + COLS { offsetX = currentCol - COLS }
+  if currentCol >= offsetX + COLS { offsetX = currentCol - COLS+1 } // ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 }
 
 func process_keypress() {
@@ -77,7 +77,9 @@ func process_keypress() {
   } else { // non-printable characters
 	  switch keyEvent.Key {
 	    case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
+	    case termbox.KeyArrowLeft: if currentCol != 0 {currentCol -- }
 	    case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
+	    case termbox.KeyArrowRight: if currentCol < len(buffer[currentRow]) { currentCol++ }
 	  }
   }
 }
