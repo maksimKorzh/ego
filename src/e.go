@@ -1,4 +1,4 @@
-package main
+package main  // // ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd11111111111111a
 
 import "os"
 import "bufio"
@@ -22,7 +22,6 @@ func read_file(filename string) {
 	if err != nil { fmt.Println("Error:", err); return }
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
-
   lineNumber := 0
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -32,13 +31,13 @@ func read_file(filename string) {
 		}
 		lineNumber++
 	}
-
+  
+  // failed reading bytes
 	if err := scanner.Err(); err != nil { fmt.Println("Error:", err) }
 }
 
 // EDITOR
 func display_buffer() {
-  
   var row, col int
   for row = 0; row < ROWS; row++ {
     bufferRow := row + offsetY
@@ -47,11 +46,9 @@ func display_buffer() {
       if bufferRow >= 0 &&  bufferRow < len(buffer) &&
          bufferCol < len(buffer[bufferRow]) {
         termbox.SetChar(col, row, buffer[bufferRow][bufferCol])
-      }
-    }
+      }}
     termbox.SetChar(col, row, '\n')
   }
-  
 }
 
 func display_status_bar() {
@@ -64,7 +61,7 @@ func scroll_buffer() {
   if currentRow < offsetY { offsetY = currentRow }
   if currentCol < offsetX { offsetX = currentCol }
   if currentRow >= offsetY + ROWS { offsetY = currentRow - ROWS+1 }
-  if currentCol >= offsetX + COLS { offsetX = currentCol - COLS+1 } // ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+  if currentCol >= offsetX + COLS { offsetX = currentCol - COLS+1 }
 }
 
 func process_keypress() {
@@ -72,15 +69,31 @@ func process_keypress() {
   if keyEvent.Key == termbox.KeyEsc {
     termbox.Close()
     os.Exit(0)
-  } else if keyEvent.Ch != 0 { // printable characters
-	  fmt.Printf("Typed: %c\n", rune(keyEvent.Ch))
+  } else if keyEvent.Ch != 0 { // printable characters	  
+	  insert_rune(keyEvent)
   } else { // non-printable characters
 	  switch keyEvent.Key {
+      case termbox.KeySpace: insert_rune(keyEvent)
 	    case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
-	    case termbox.KeyArrowLeft: if currentCol != 0 {currentCol -- }
 	    case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
-	    case termbox.KeyArrowRight: if currentCol < len(buffer[currentRow]) { currentCol++ }
+	    case termbox.KeyArrowLeft:
+	      if currentCol != 0 {
+	        currentCol --
+	      } else if currentRow > 0 {
+	        currentRow -= 1;
+	        currentCol = len(buffer[currentRow])
+	      }
+	    case termbox.KeyArrowRight:
+	      if currentCol < len(buffer[currentRow]) {
+	        currentCol++
+	      } else if currentRow < len(buffer)-1 {
+	        currentRow += 1
+	        currentCol = 0
+	      }
 	  }
+	  
+	  // fix cursor position if needed
+	  if currentCol > len(buffer[currentRow]) { currentCol = len(buffer[currentRow]) }
   }
 }
 
@@ -93,6 +106,15 @@ func get_key() termbox.Event {
 	  case termbox.EventError: panic(event.Err)
 	}
 	return keyEvent
+}
+
+func insert_rune(event termbox.Event) {
+  insertRune := make([]rune, len(buffer[currentRow])+1)
+  copy(insertRune[:currentCol], buffer[currentRow][:currentCol])
+  insertRune[currentCol] = rune(event.Ch)
+  copy(insertRune[currentCol+1:], buffer[currentRow][currentCol:])
+  buffer[currentRow] = insertRune
+  currentCol++
 }
 
 func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
