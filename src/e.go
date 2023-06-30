@@ -74,6 +74,8 @@ func process_keypress() {
   } else { // non-printable characters
 	  switch keyEvent.Key {
       case termbox.KeySpace: insert_rune(keyEvent)
+      case termbox.KeyBackspace: delete_rune(keyEvent)
+      case termbox.KeyBackspace2: delete_rune(keyEvent)
 	    case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
 	    case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
 	    case termbox.KeyArrowLeft:
@@ -97,7 +99,6 @@ func process_keypress() {
   }
 }
 
-
 // MISC
 func get_key() termbox.Event {
   var keyEvent termbox.Event
@@ -115,6 +116,29 @@ func insert_rune(event termbox.Event) {
   copy(insertRune[currentCol+1:], buffer[currentRow][currentCol:])
   buffer[currentRow] = insertRune
   currentCol++
+}
+
+func delete_rune(event termbox.Event) {
+  if currentCol > 0 {
+    currentCol--
+    deleteRune := make([]rune, len(buffer[currentRow])-1)
+    copy(deleteRune[:currentCol], buffer[currentRow][:currentCol])
+    copy(deleteRune[currentCol:], buffer[currentRow][currentCol+1:])
+    buffer[currentRow] = deleteRune
+  } else if currentRow > 0 {
+    appendLine := make([]rune, len(buffer[currentRow]))
+    copy(appendLine, buffer[currentRow][currentCol:])
+    newBuffer := make([][]rune, len(buffer)-1)
+    copy(newBuffer[:currentRow], buffer[:currentRow])
+    copy(newBuffer[currentRow:], buffer[currentRow+1:])
+    buffer = newBuffer
+    currentRow--
+    currentCol = len(buffer[currentRow])
+    insertLine := make([]rune, len(buffer[currentRow]) + len(appendLine))
+    copy(insertLine[:len(buffer[currentRow])], buffer[currentRow])
+    copy(insertLine[len(buffer[currentRow]):], appendLine)
+    buffer[currentRow] = insertLine
+  }
 }
 
 func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
