@@ -17,21 +17,20 @@
 
                           FEATURES
                          ----------
-
-  Editing:
-   - inserting text
-   - deleting text
-   - indentation
-   - copy/paste
-   - undo/redo
-
-  Navigation
-   - arrow keys /w Ctrl
-   - Home/End
-   - PgUp/PgDn  /w Ctrl
-   - Search next/prev
-
-  File I/O
-   - read file
-   - write file
-   - create file   
+  Editing:                                                  
+   - inserting text                                         
+   - deleting text                                          
+   - indentation                                            
+   - copy/paste                                             
+   - undo/redo                                              
+                                                            
+  Navigation                                                
+   - arrow keys /w Ctrl                                     
+   - Home/End                                               
+   - PgUp/PgDn  /w Ctrl                                     
+   - Search next/prev                                       
+                                                            
+  File I/O                         
+   - read file                     
+   - write file                    
+   - create file

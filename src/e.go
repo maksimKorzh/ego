@@ -1,8 +1,7 @@
-package main  // // ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd11111111111111a
+package main
 
 import "os"
 import "bufio"
-//import "time"
 import "fmt"
 import "strconv"
 import "strings"
@@ -10,37 +9,59 @@ import "strings"
 import "github.com/nsf/termbox-go"
 import "github.com/mattn/go-runewidth"
 
-// VARS
 var buffer = [][]rune{}
 var ROWS, COLS int
 var offsetX, offsetY, currentRow, currentCol int
-var src string
+var source_file string
 
-// SYSTEM
 func read_file(filename string) {
 	file, err := os.Open(filename)
-	if err != nil { fmt.Println("Error:", err); return }
+
+	if err != nil {
+	  source_file = filename
+	  buffer = append(buffer, []rune{})
+	}
+
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
   lineNumber := 0
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		buffer = append(buffer, []rune{})
+
 		for i := 0; i < len(line); i++ {
 		  buffer[lineNumber] = append(buffer[lineNumber], rune(line[i]))
 		}
+
 		lineNumber++
 	}
-  
-  // failed reading bytes
-	if err := scanner.Err(); err != nil { fmt.Println("Error:", err) }
+
+	//if lineNumber == 0 { buffer = append(buffer, []rune{})
+	//} else if err := scanner.Err(); err != nil { fmt.Println("111Error:", err) }
 }
 
-// EDITOR
+func write_file(filename string) {
+  file, err := os.Create(filename)
+  if err != nil { fmt.Println(err) }
+  writer := bufio.NewWriter(file)
+
+  for row, line := range buffer {
+      newLine := "\n"
+      if row == len(buffer)-1 { newLine = "" }
+      writeLine := string(line) + newLine
+      _, err = writer.WriteString(writeLine)
+      if err != nil { fmt.Println("Error:", err) }
+  }
+
+  writer.Flush()
+}
+
 func insert_rune(event termbox.Event) {
   insertRune := make([]rune, len(buffer[currentRow])+1)
   copy(insertRune[:currentCol], buffer[currentRow][:currentCol])
-  insertRune[currentCol] = rune(event.Ch)
+  if event.Key == termbox.KeySpace { insertRune[currentCol] = rune(' ')
+  } else { insertRune[currentCol] = rune(event.Ch) }
   copy(insertRune[currentCol+1:], buffer[currentRow][currentCol:])
   buffer[currentRow] = insertRune
   currentCol++
@@ -132,9 +153,9 @@ func process_keypress() {
   if keyEvent.Key == termbox.KeyEsc {
     termbox.Close()
     os.Exit(0)
-  } else if keyEvent.Ch != 0 { // printable characters	  
+  } else if keyEvent.Ch != 0 {
 	  insert_rune(keyEvent)
-  } else { // non-printable characters
+  } else {
 	  switch keyEvent.Key {
       case termbox.KeySpace: insert_rune(keyEvent)
       case termbox.KeyEnter: insert_line()
@@ -160,12 +181,8 @@ func process_keypress() {
 	        currentRow += 1
 	        currentCol = 0
 	      }
-	    //case termbox.KeyCtrlC:
-			//	termbox.Close()
-		//		os.Exit(0)
+	    case termbox.KeyCtrlS: write_file(source_file)
 	  }
-	  
-	  // fix cursor position if needed
 	  if currentCol > len(buffer[currentRow]) { currentCol = len(buffer[currentRow]) }
   }
 }
@@ -174,31 +191,26 @@ func process_keypress() {
 func run_editor() {
   err := termbox.Init()
 	if err != nil { fmt.Println(err); os.Exit(1) }
-  read_file("e.go")
+  if len(os.Args) > 1 {
+    source_file = os.Args[1]
+    read_file(source_file)
+  } else {
+    source_file = "noname.txt"
+    buffer = append(buffer, []rune{})
+  }
+
   for {    
     COLS, ROWS = termbox.Size(); ROWS--;
     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-    
     scroll_buffer()
     display_buffer()    
     display_status_bar()
-
-	  
 	  termbox.SetCursor(currentCol - offsetX, currentRow - offsetY)
 	  termbox.Flush()
-	  
 	  process_keypress()
-	  
-	  
   }
 }
-
 
 func main() {
 	run_editor()
 }
-
-
-
-
-
