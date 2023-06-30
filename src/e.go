@@ -164,10 +164,17 @@ func process_keypress() {
       switch keyEvent.Ch {
         case 'q': termbox.Close(); os.Exit(0)
         case 'e': mode = 1
+        case 'w': write_file(source_file)
+
       }
     }
   } else {
 	  switch keyEvent.Key {
+     case termbox.KeyTab:
+       if mode == 1 {
+         for i:= 0; i < 4; i++ { insert_rune(keyEvent); }
+         modified = true
+       }
      case termbox.KeySpace: if mode == 1 { insert_rune(keyEvent); modified = true }
      case termbox.KeyEnter: if mode == 1 { insert_line(); modified = true }
      case termbox.KeyBackspace: if mode == 1 {delete_rune(); modified = true }
@@ -192,7 +199,6 @@ func process_keypress() {
 	        currentRow += 1
 	        currentCol = 0
 	      }
-	    case termbox.KeyCtrlS: write_file(source_file)
 	  }
 	  if currentCol > len(buffer[currentRow]) { currentCol = len(buffer[currentRow]) }
   }
