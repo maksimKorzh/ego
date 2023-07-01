@@ -46,6 +46,7 @@ func read_file(filename string) {
 
     lineNumber++
   }
+  if lineNumber == 0 { buffer = append(buffer, []rune{}) }
 }
 
 func write_file(filename string) {
@@ -132,7 +133,7 @@ func display_buffer() {
         if buffer[bufferRow][bufferCol] != rune('\t') {
           termbox.SetChar(col, row, buffer[bufferRow][bufferCol])
         } else { termbox.SetCell(col, row, rune(' '), termbox.ColorDefault, termbox.ColorGreen) }
-      }}
+      } else if row > len(buffer)-1 { termbox.SetCell(0, row, '*', termbox.ColorBlue, termbox.ColorDefault)} }
     termbox.SetChar(col, row, '\n')
   }
 }
