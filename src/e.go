@@ -133,7 +133,8 @@ func display_buffer() {
         if buffer[bufferRow][bufferCol] != rune('\t') {
           termbox.SetChar(col, row, buffer[bufferRow][bufferCol])
         } else { termbox.SetCell(col, row, rune(' '), termbox.ColorDefault, termbox.ColorGreen) }
-      } else if row > len(buffer)-1 { termbox.SetCell(0, row, '*', termbox.ColorBlue, termbox.ColorDefault)} }
+      } else if row+offsetY > len(buffer)-1 {
+    termbox.SetCell(0, row, '*', termbox.ColorBlue, termbox.ColorDefault)}}
     termbox.SetChar(col, row, '\n')
   }
 }
