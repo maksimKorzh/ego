@@ -218,7 +218,7 @@ func process_keypress() {
   } else if keyEvent.Ch != 0 {
      if mode == 1 { insert_rune(keyEvent); modified = true
     } else {
-      nineth_part := int((len(text_buffer)-1)/9)
+      nineth_part := int((len(text_buffer)-1)/8)
       switch keyEvent.Ch {
         case 'q': termbox.Close(); os.Exit(0)
         case 'e': mode = 1
