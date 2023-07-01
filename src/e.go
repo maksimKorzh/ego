@@ -1,10 +1,3 @@
-/*
-       TODO:
-
-     - undo/redo
-     - find/find next
-*/
-
 package main
 
 import "os"
@@ -62,6 +55,7 @@ func write_file(filename string) {
       _, err = writer.WriteString(writeLine)
       if err != nil { fmt.Println("Error:", err) }
   }
+
   modified = false
   writer.Flush()
 }
@@ -209,6 +203,7 @@ func get_key() termbox.Event {
      case termbox.EventKey: keyEvent = event
      case termbox.EventError: panic(event.Err)
    }
+
    return keyEvent
 }
 
