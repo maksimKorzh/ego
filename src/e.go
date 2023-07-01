@@ -1,9 +1,8 @@
 /*
        TODO:
 
-     - fix line numbers
-     - copy/paste
      - undo/redo
+     - find/find next
 */
 
 package main
@@ -19,8 +18,8 @@ import "github.com/mattn/go-runewidth"
 
 var mode int
 var text_buffer = [][]rune{}
+var undo_buffer = [][]rune{}
 var copy_buffer = []rune{}
-var undo_buffer = []rune{}
 var ROWS, COLS int
 var offsetX, offsetY, currentRow, currentCol int
 var source_file string
@@ -134,12 +133,23 @@ func copy_line() {
 }
 
 func paste_line() {
-  if len(copy_buffer) == 0 { return }
+  if len(copy_buffer) == 0 { currentRow++; currentCol = 0 }
   new_text_buffer := make([][]rune, len(text_buffer)+1)               
   copy(new_text_buffer[:currentRow], text_buffer[:currentRow])        
   new_text_buffer[currentRow] = copy_buffer
   copy(new_text_buffer[currentRow+1:], text_buffer[currentRow:])      
   text_buffer = new_text_buffer
+}
+
+func push_text_buffer() {
+  copy_undo_buffer := make([][]rune, len(text_buffer))
+  copy(copy_undo_buffer, text_buffer)
+  undo_buffer = copy_undo_buffer
+}
+
+func pull_text_buffer() {
+  if len(undo_buffer) == 0 { return }
+  text_buffer = undo_buffer
 }
 
 func scroll_text_buffer() {
@@ -175,15 +185,19 @@ func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
 
 func display_status_bar() {
   var mode_status string
+  var copy_status string
+  var undo_status string
   if mode > 0 { mode_status = " EDIT: "
   } else { mode_status = " VIEW: " }
   file_status := source_file + " - " + strconv.Itoa(len(text_buffer)) + " lines"
   if modified { file_status += " modified "
   } else { file_status += " saved" }
   cursor_status := " Row " + strconv.Itoa(currentRow+1) + ", Col " + strconv.Itoa(currentCol+1) + " "
-  used_space := len(mode_status) + len(file_status) + len(cursor_status)
+  if len(copy_buffer) > 0 { copy_status = " [Copy]" }
+  if len(undo_buffer) > 0 { undo_status = " [Undo]" }
+  used_space := len(mode_status) + len(file_status) + len(cursor_status) + len(copy_status) + len (undo_status)
   spaces := strings.Repeat(" ", COLS - used_space)
-  message := mode_status + file_status + spaces + cursor_status
+  message := mode_status + file_status + copy_status + undo_status + spaces + cursor_status
   print_message(0, ROWS, termbox.ColorBlack, termbox.ColorWhite, message)
 }
 
@@ -210,6 +224,8 @@ func process_keypress() {
         case 'd': cut_line()
         case 'c': copy_line()
         case 'p': paste_line()
+        case 's': push_text_buffer()
+        case 'l': pull_text_buffer()
         case '0': currentRow = 0; currentCol = 0
         case '1': currentRow = nineth_part; currentCol = 0
         case '2': currentRow = nineth_part*2; currentCol = 0
