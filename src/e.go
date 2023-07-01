@@ -1,3 +1,11 @@
+/*
+       TODO:
+
+     - fix line numbers
+     - copy/paste
+     - undo/redo
+*/
+
 package main
 
 import "os"
@@ -61,7 +69,8 @@ func insert_rune(event termbox.Event) {
   copy(insertRune[:currentCol], buffer[currentRow][:currentCol])
   if event.Key == termbox.KeySpace { insertRune[currentCol] = rune(' ')
   } else if event.Key == termbox.KeyTab { insertRune[currentCol] = rune(' ')
-  } else { insertRune[currentCol] = rune(event.Ch) }
+  } else { if rune(event.Ch) != '~' { insertRune[currentCol] = rune(event.Ch)
+  } else { insertRune[currentCol] = rune('\t') }}
   copy(insertRune[currentCol+1:], buffer[currentRow][currentCol:])
   buffer[currentRow] = insertRune
   currentCol++
@@ -120,7 +129,9 @@ func display_buffer() {
       bufferCol := col + offsetX
       if bufferRow >= 0 &&  bufferRow < len(buffer) &&
          bufferCol < len(buffer[bufferRow]) {
-        termbox.SetChar(col, row, buffer[bufferRow][bufferCol])
+        if buffer[bufferRow][bufferCol] != rune('\t') {
+          termbox.SetChar(col, row, buffer[bufferRow][bufferCol])
+        } else { termbox.SetCell(col, row, rune(' '), termbox.ColorDefault, termbox.ColorGreen) }
       }}
     termbox.SetChar(col, row, '\n')
   }
@@ -140,7 +151,7 @@ func display_status_bar() {
   file_status := source_file + " - " + strconv.Itoa(len(buffer)) + " lines"
   if modified { file_status += " modified "
   } else { file_status += " saved" }
-  cursor_status := " Row " + strconv.Itoa(currentRow) + ", Col " + strconv.Itoa(currentCol) + " "
+  cursor_status := " Row " + strconv.Itoa(currentRow+1) + ", Col " + strconv.Itoa(currentCol+1) + " "
   used_space := len(mode_status) + len(file_status) + len(cursor_status)
   spaces := strings.Repeat(" ", COLS - used_space)
   message := mode_status + file_status + spaces + cursor_status
