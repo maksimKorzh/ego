@@ -17,27 +17,27 @@ var source_file string
 var modified bool
 
 func read_file(filename string) {
-	file, err := os.Open(filename)
+  file, err := os.Open(filename)
 
-	if err != nil {
-	  source_file = filename
-	  buffer = append(buffer, []rune{})
-	}
+  if err != nil {
+    source_file = filename
+    buffer = append(buffer, []rune{})
+  }
 
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
+  defer file.Close()
+  scanner := bufio.NewScanner(file)
   lineNumber := 0
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		buffer = append(buffer, []rune{})
+  for scanner.Scan() {
+    line := scanner.Text()
+    buffer = append(buffer, []rune{})
 
-		for i := 0; i < len(line); i++ {
-		  buffer[lineNumber] = append(buffer[lineNumber], rune(line[i]))
-		}
+    for i := 0; i < len(line); i++ {
+      buffer[lineNumber] = append(buffer[lineNumber], rune(line[i]))
+    }
 
-		lineNumber++
-	}
+    lineNumber++
+  }
 }
 
 func write_file(filename string) {
@@ -126,17 +126,17 @@ func display_buffer() {
 }
 
 func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
-	for _, c := range msg {
-		termbox.SetCell(x, y, c, fg, bg)
-		x += runewidth.RuneWidth(c)
-	}
+  for _, c := range msg {
+    termbox.SetCell(x, y, c, fg, bg)
+    x += runewidth.RuneWidth(c)
+  }
 }
 
 func display_status_bar() {
   var mode_status string
   if mode > 0 { mode_status = " EDIT: "
   } else { mode_status = " VIEW: " }
-  file_status := " " + source_file + " - " + strconv.Itoa(len(buffer)) + " lines"
+  file_status := source_file + " - " + strconv.Itoa(len(buffer)) + " lines"
   if modified { file_status += " modified "
   } else { file_status += " saved" }
   cursor_status := " Row " + strconv.Itoa(currentRow) + ", Col " + strconv.Itoa(currentCol) + " "
@@ -149,27 +149,33 @@ func display_status_bar() {
 func get_key() termbox.Event {
   var keyEvent termbox.Event
   switch event := termbox.PollEvent(); event.Type {
-	   case termbox.EventKey: keyEvent = event
-	   case termbox.EventError: panic(event.Err)
- 	}
-	 return keyEvent
+     case termbox.EventKey: keyEvent = event
+     case termbox.EventError: panic(event.Err)
+   }
+   return keyEvent
 }
 
 func process_keypress() {
   keyEvent := get_key()
   if keyEvent.Key == termbox.KeyEsc { mode = 0
   } else if keyEvent.Ch != 0 {
-	   if mode == 1 { insert_rune(keyEvent); modified = true
+     if mode == 1 { insert_rune(keyEvent); modified = true
     } else {
       switch keyEvent.Ch {
         case 'q': termbox.Close(); os.Exit(0)
         case 'e': mode = 1
         case 'w': write_file(source_file)
-
+        case '-': if currentRow - int(ROWS/4) > 0 { currentRow -= int(ROWS/4) }
+        case '=': if currentRow + int(ROWS/4) < len(buffer) { currentRow += int(ROWS/4) }
+        case '1': currentRow = 0; currentCol = 0
+        case '2': currentRow = int(len(buffer)/5); currentCol = 0
+        case '3': currentRow = int(len(buffer)/3); currentCol = 0
+        case '4': currentRow = int(len(buffer)/2); currentCol = 0
+        case '9': currentRow = len(buffer)-1; currentCol = 0
       }
     }
   } else {
-	  switch keyEvent.Key {
+    switch keyEvent.Key {
      case termbox.KeyTab:
        if mode == 1 {
          for i:= 0; i < 4; i++ { insert_rune(keyEvent); }
@@ -179,35 +185,34 @@ func process_keypress() {
      case termbox.KeyEnter: if mode == 1 { insert_line(); modified = true }
      case termbox.KeyBackspace: if mode == 1 {delete_rune(); modified = true }
      case termbox.KeyBackspace2: if mode == 1 { delete_rune(); modified = true }
-	    case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
-	    case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
-	    case termbox.KeyHome: currentCol = 0
-	    case termbox.KeyEnd: currentCol = len(buffer[currentRow])
-	    case termbox.KeyPgup: if currentRow - int(ROWS/4) > 0 { currentRow -= int(ROWS/4) }
-	    case termbox.KeyPgdn: if currentRow + int(ROWS/4) < len(buffer)-1 { currentRow += int(ROWS/4) }
-	    case termbox.KeyArrowLeft:
-	      if currentCol != 0 {
-	        currentCol --
-	      } else if currentRow > 0 {
-	        currentRow -= 1;
-	        currentCol = len(buffer[currentRow])
-	      }
-	    case termbox.KeyArrowRight:
-	      if currentCol < len(buffer[currentRow]) {
-	        currentCol++
-	      } else if currentRow < len(buffer)-1 {
-	        currentRow += 1
-	        currentCol = 0
-	      }
-	  }
-	  if currentCol > len(buffer[currentRow]) { currentCol = len(buffer[currentRow]) }
+     case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
+     case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
+     case termbox.KeyHome: currentCol = 0
+     case termbox.KeyEnd: currentCol = len(buffer[currentRow])
+     case termbox.KeyPgup: if currentRow - int(ROWS/4) > 0 { currentRow -= int(ROWS/4) }
+     case termbox.KeyPgdn: if currentRow + int(ROWS/4) < len(buffer)-1 { currentRow += int(ROWS/4) }
+     case termbox.KeyArrowLeft:
+       if currentCol != 0 {
+         currentCol --
+       } else if currentRow > 0 {
+         currentRow -= 1;
+         currentCol = len(buffer[currentRow])
+       }
+     case termbox.KeyArrowRight:
+       if currentCol < len(buffer[currentRow]) {
+         currentCol++
+       } else if currentRow < len(buffer)-1 {
+         currentRow += 1
+         currentCol = 0
+       }
+    }
+    if currentCol > len(buffer[currentRow]) { currentCol = len(buffer[currentRow]) }
   }
 }
 
-// MAIN
 func run_editor() {
   err := termbox.Init()
-	if err != nil { fmt.Println(err); os.Exit(1) }
+  if err != nil { fmt.Println(err); os.Exit(1) }
   if len(os.Args) > 1 {
     source_file = os.Args[1]
     read_file(source_file)
@@ -217,17 +222,18 @@ func run_editor() {
   }
 
   for {    
-    COLS, ROWS = termbox.Size(); ROWS--;
+    COLS, ROWS = termbox.Size(); ROWS--
+    if COLS < 80 { COLS = 80 }
     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
     scroll_buffer()
     display_buffer()    
     display_status_bar()
-	  termbox.SetCursor(currentCol - offsetX, currentRow - offsetY)
-	  termbox.Flush()
-	  process_keypress()
+    termbox.SetCursor(currentCol - offsetX, currentRow - offsetY)
+    termbox.Flush()
+    process_keypress()
   }
 }
 
 func main() {
-	run_editor()
+  run_editor()
 }
