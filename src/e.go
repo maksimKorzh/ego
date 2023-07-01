@@ -18,7 +18,9 @@ import "github.com/nsf/termbox-go"
 import "github.com/mattn/go-runewidth"
 
 var mode int
-var buffer = [][]rune{}
+var text_buffer = [][]rune{}
+var copy_buffer = []rune{}
+var undo_buffer = []rune{}
 var ROWS, COLS int
 var offsetX, offsetY, currentRow, currentCol int
 var source_file string
@@ -29,7 +31,7 @@ func read_file(filename string) {
 
   if err != nil {
     source_file = filename
-    buffer = append(buffer, []rune{})
+    text_buffer = append(text_buffer, []rune{})
   }
 
   defer file.Close()
@@ -38,15 +40,15 @@ func read_file(filename string) {
 
   for scanner.Scan() {
     line := scanner.Text()
-    buffer = append(buffer, []rune{})
+    text_buffer = append(text_buffer, []rune{})
 
     for i := 0; i < len(line); i++ {
-      buffer[lineNumber] = append(buffer[lineNumber], rune(line[i]))
+      text_buffer[lineNumber] = append(text_buffer[lineNumber], rune(line[i]))
     }
 
     lineNumber++
   }
-  if lineNumber == 0 { buffer = append(buffer, []rune{}) }
+  if lineNumber == 0 { text_buffer = append(text_buffer, []rune{}) }
 }
 
 func write_file(filename string) {
@@ -54,9 +56,9 @@ func write_file(filename string) {
   if err != nil { fmt.Println(err) }
   writer := bufio.NewWriter(file)
 
-  for row, line := range buffer {
+  for row, line := range text_buffer {
       newLine := "\n"
-      if row == len(buffer)-1 { newLine = "" }
+      if row == len(text_buffer)-1 { newLine = "" }
       writeLine := string(line) + newLine
       _, err = writer.WriteString(writeLine)
       if err != nil { fmt.Println("Error:", err) }
@@ -66,74 +68,99 @@ func write_file(filename string) {
 }
 
 func insert_rune(event termbox.Event) {
-  insertRune := make([]rune, len(buffer[currentRow])+1)
-  copy(insertRune[:currentCol], buffer[currentRow][:currentCol])
+  insertRune := make([]rune, len(text_buffer[currentRow])+1)
+  copy(insertRune[:currentCol], text_buffer[currentRow][:currentCol])
   if event.Key == termbox.KeySpace { insertRune[currentCol] = rune(' ')
   } else if event.Key == termbox.KeyTab { insertRune[currentCol] = rune(' ')
   } else { if rune(event.Ch) != '~' { insertRune[currentCol] = rune(event.Ch)
   } else { insertRune[currentCol] = rune('\t') }}
-  copy(insertRune[currentCol+1:], buffer[currentRow][currentCol:])
-  buffer[currentRow] = insertRune
+  copy(insertRune[currentCol+1:], text_buffer[currentRow][currentCol:])
+  text_buffer[currentRow] = insertRune
   currentCol++
 }
 
 func delete_rune() {
   if currentCol > 0 {
     currentCol--
-    deleteRune := make([]rune, len(buffer[currentRow])-1)
-    copy(deleteRune[:currentCol], buffer[currentRow][:currentCol])
-    copy(deleteRune[currentCol:], buffer[currentRow][currentCol+1:])
-    buffer[currentRow] = deleteRune
+    deleteRune := make([]rune, len(text_buffer[currentRow])-1)
+    copy(deleteRune[:currentCol], text_buffer[currentRow][:currentCol])
+    copy(deleteRune[currentCol:], text_buffer[currentRow][currentCol+1:])
+    text_buffer[currentRow] = deleteRune
   } else if currentRow > 0 {
-    appendLine := make([]rune, len(buffer[currentRow]))
-    copy(appendLine, buffer[currentRow][currentCol:])
-    newBuffer := make([][]rune, len(buffer)-1)
-    copy(newBuffer[:currentRow], buffer[:currentRow])
-    copy(newBuffer[currentRow:], buffer[currentRow+1:])
-    buffer = newBuffer
+    appendLine := make([]rune, len(text_buffer[currentRow]))
+    copy(appendLine, text_buffer[currentRow][currentCol:])
+    new_text_buffer := make([][]rune, len(text_buffer)-1)
+    copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
+    copy(new_text_buffer[currentRow:], text_buffer[currentRow+1:])
+    text_buffer = new_text_buffer
     currentRow--
-    currentCol = len(buffer[currentRow])
-    insertLine := make([]rune, len(buffer[currentRow]) + len(appendLine))
-    copy(insertLine[:len(buffer[currentRow])], buffer[currentRow])
-    copy(insertLine[len(buffer[currentRow]):], appendLine)
-    buffer[currentRow] = insertLine
+    currentCol = len(text_buffer[currentRow])
+    insertLine := make([]rune, len(text_buffer[currentRow]) + len(appendLine))
+    copy(insertLine[:len(text_buffer[currentRow])], text_buffer[currentRow])
+    copy(insertLine[len(text_buffer[currentRow]):], appendLine)
+    text_buffer[currentRow] = insertLine
   }
 }
 
 func insert_line() {
-  afterLine := make([]rune, len(buffer[currentRow][currentCol:]))
-  copy(afterLine, buffer[currentRow][currentCol:])
-  beforeLine := make([]rune, len(buffer[currentRow][:currentCol]))
-  copy(beforeLine, buffer[currentRow][:currentCol])
-  buffer[currentRow] = beforeLine
+  afterLine := make([]rune, len(text_buffer[currentRow][currentCol:]))
+  copy(afterLine, text_buffer[currentRow][currentCol:])
+  beforeLine := make([]rune, len(text_buffer[currentRow][:currentCol]))
+  copy(beforeLine, text_buffer[currentRow][:currentCol])
+  text_buffer[currentRow] = beforeLine
   currentRow++
   currentCol = 0
-  newBuffer := make([][]rune, len(buffer)+1)
-  copy(newBuffer[:currentRow], buffer[:currentRow])
-  newBuffer[currentRow] = afterLine
-  copy(newBuffer[currentRow+1:], buffer[currentRow:])
-  buffer = newBuffer
+  new_text_buffer := make([][]rune, len(text_buffer)+1)
+  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
+  new_text_buffer[currentRow] = afterLine
+  copy(new_text_buffer[currentRow+1:], text_buffer[currentRow:])
+  text_buffer = new_text_buffer
 }
 
-func scroll_buffer() {
+func cut_line() {
+  copy_line()
+  if currentRow >= len(text_buffer) || len(text_buffer) < 2 { return }
+  new_text_buffer := make([][]rune, len(text_buffer)-1)                                                   
+  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])                                            
+  copy(new_text_buffer[currentRow:], text_buffer[currentRow+1:])                                             
+  text_buffer = new_text_buffer
+  if currentRow > 0 { currentRow--; currentCol = 0 }
+}
+
+func copy_line() {
+  copy_line := make([]rune, len(text_buffer[currentRow]))
+  copy(copy_line, text_buffer[currentRow])
+  copy_buffer = copy_line
+}
+
+func paste_line() {
+  if len(copy_buffer) == 0 { return }
+  new_text_buffer := make([][]rune, len(text_buffer)+1)               
+  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])        
+  new_text_buffer[currentRow] = copy_buffer
+  copy(new_text_buffer[currentRow+1:], text_buffer[currentRow:])      
+  text_buffer = new_text_buffer
+}
+
+func scroll_text_buffer() {
   if currentRow < offsetY { offsetY = currentRow }
   if currentCol < offsetX { offsetX = currentCol }
   if currentRow >= offsetY + ROWS { offsetY = currentRow - ROWS+1 }
   if currentCol >= offsetX + COLS { offsetX = currentCol - COLS+1 }
 }
 
-func display_buffer() {
+func display_text_buffer() {
   var row, col int
   for row = 0; row < ROWS; row++ {
-    bufferRow := row + offsetY
+    text_bufferRow := row + offsetY
     for col = 0; col < COLS; col++ {
-      bufferCol := col + offsetX
-      if bufferRow >= 0 &&  bufferRow < len(buffer) &&
-         bufferCol < len(buffer[bufferRow]) {
-        if buffer[bufferRow][bufferCol] != rune('\t') {
-          termbox.SetChar(col, row, buffer[bufferRow][bufferCol])
+      text_bufferCol := col + offsetX
+      if text_bufferRow >= 0 &&  text_bufferRow < len(text_buffer) &&
+         text_bufferCol < len(text_buffer[text_bufferRow]) {
+        if text_buffer[text_bufferRow][text_bufferCol] != rune('\t') {
+          termbox.SetChar(col, row, text_buffer[text_bufferRow][text_bufferCol])
         } else { termbox.SetCell(col, row, rune(' '), termbox.ColorDefault, termbox.ColorGreen) }
-      } else if row+offsetY > len(buffer)-1 {
+      } else if row+offsetY > len(text_buffer)-1 {
     termbox.SetCell(0, row, '*', termbox.ColorBlue, termbox.ColorDefault)}}
     termbox.SetChar(col, row, '\n')
   }
@@ -150,7 +177,7 @@ func display_status_bar() {
   var mode_status string
   if mode > 0 { mode_status = " EDIT: "
   } else { mode_status = " VIEW: " }
-  file_status := source_file + " - " + strconv.Itoa(len(buffer)) + " lines"
+  file_status := source_file + " - " + strconv.Itoa(len(text_buffer)) + " lines"
   if modified { file_status += " modified "
   } else { file_status += " saved" }
   cursor_status := " Row " + strconv.Itoa(currentRow+1) + ", Col " + strconv.Itoa(currentCol+1) + " "
@@ -175,11 +202,14 @@ func process_keypress() {
   } else if keyEvent.Ch != 0 {
      if mode == 1 { insert_rune(keyEvent); modified = true
     } else {
-      nineth_part := int((len(buffer)-1)/9)
+      nineth_part := int((len(text_buffer)-1)/9)
       switch keyEvent.Ch {
         case 'q': termbox.Close(); os.Exit(0)
         case 'e': mode = 1
         case 'w': write_file(source_file)
+        case 'd': cut_line()
+        case 'c': copy_line()
+        case 'p': paste_line()
         case '0': currentRow = 0; currentCol = 0
         case '1': currentRow = nineth_part; currentCol = 0
         case '2': currentRow = nineth_part*2; currentCol = 0
@@ -189,7 +219,7 @@ func process_keypress() {
         case '6': currentRow = nineth_part*6; currentCol = 0
         case '7': currentRow = nineth_part*7; currentCol = 0
         case '8': currentRow = nineth_part*8; currentCol = 0
-        case '9': currentRow = len(buffer)-1; currentCol = 0
+        case '9': currentRow = len(text_buffer)-1; currentCol = 0
       }
     }
   } else {
@@ -204,27 +234,27 @@ func process_keypress() {
      case termbox.KeyBackspace: if mode == 1 {delete_rune(); modified = true }
      case termbox.KeyBackspace2: if mode == 1 { delete_rune(); modified = true }
      case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
-     case termbox.KeyArrowDown: if currentRow < len(buffer)-1 { currentRow++ }
+     case termbox.KeyArrowDown: if currentRow < len(text_buffer)-1 { currentRow++ }
      case termbox.KeyHome: currentCol = 0
-     case termbox.KeyEnd: currentCol = len(buffer[currentRow])
+     case termbox.KeyEnd: currentCol = len(text_buffer[currentRow])
      case termbox.KeyPgup: if currentRow - int(ROWS/4) > 0 { currentRow -= int(ROWS/4) }
-     case termbox.KeyPgdn: if currentRow + int(ROWS/4) < len(buffer)-1 { currentRow += int(ROWS/4) }
+     case termbox.KeyPgdn: if currentRow + int(ROWS/4) < len(text_buffer)-1 { currentRow += int(ROWS/4) }
      case termbox.KeyArrowLeft:
        if currentCol != 0 {
          currentCol --
        } else if currentRow > 0 {
          currentRow -= 1;
-         currentCol = len(buffer[currentRow])
+         currentCol = len(text_buffer[currentRow])
        }
      case termbox.KeyArrowRight:
-       if currentCol < len(buffer[currentRow]) {
+       if currentCol < len(text_buffer[currentRow]) {
          currentCol++
-       } else if currentRow < len(buffer)-1 {
+       } else if currentRow < len(text_buffer)-1 {
          currentRow += 1
          currentCol = 0
        }
     }
-    if currentCol > len(buffer[currentRow]) { currentCol = len(buffer[currentRow]) }
+    if currentCol > len(text_buffer[currentRow]) { currentCol = len(text_buffer[currentRow]) }
   }
 }
 
@@ -236,15 +266,15 @@ func run_editor() {
     read_file(source_file)
   } else {
     source_file = "noname.txt"
-    buffer = append(buffer, []rune{})
+    text_buffer = append(text_buffer, []rune{})
   }
 
   for {    
     COLS, ROWS = termbox.Size(); ROWS--
     if COLS < 80 { COLS = 80 }
     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-    scroll_buffer()
-    display_buffer()    
+    scroll_text_buffer()
+    display_text_buffer()    
     display_status_bar()
     termbox.SetCursor(currentCol - offsetX, currentRow - offsetY)
     termbox.Flush()
