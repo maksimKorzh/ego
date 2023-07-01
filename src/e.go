@@ -60,6 +60,7 @@ func insert_rune(event termbox.Event) {
   insertRune := make([]rune, len(buffer[currentRow])+1)
   copy(insertRune[:currentCol], buffer[currentRow][:currentCol])
   if event.Key == termbox.KeySpace { insertRune[currentCol] = rune(' ')
+  } else if event.Key == termbox.KeyTab { insertRune[currentCol] = rune(' ')
   } else { insertRune[currentCol] = rune(event.Ch) }
   copy(insertRune[currentCol+1:], buffer[currentRow][currentCol:])
   buffer[currentRow] = insertRune
@@ -161,16 +162,20 @@ func process_keypress() {
   } else if keyEvent.Ch != 0 {
      if mode == 1 { insert_rune(keyEvent); modified = true
     } else {
+      nineth_part := int((len(buffer)-1)/9)
       switch keyEvent.Ch {
         case 'q': termbox.Close(); os.Exit(0)
         case 'e': mode = 1
         case 'w': write_file(source_file)
-        case '-': if currentRow - int(ROWS/4) > 0 { currentRow -= int(ROWS/4) }
-        case '=': if currentRow + int(ROWS/4) < len(buffer) { currentRow += int(ROWS/4) }
-        case '1': currentRow = 0; currentCol = 0
-        case '2': currentRow = int(len(buffer)/5); currentCol = 0
-        case '3': currentRow = int(len(buffer)/3); currentCol = 0
-        case '4': currentRow = int(len(buffer)/2); currentCol = 0
+        case '0': currentRow = 0; currentCol = 0
+        case '1': currentRow = nineth_part; currentCol = 0
+        case '2': currentRow = nineth_part*2; currentCol = 0
+        case '3': currentRow = nineth_part*3; currentCol = 0
+        case '4': currentRow = nineth_part*4; currentCol = 0
+        case '5': currentRow = nineth_part*5; currentCol = 0
+        case '6': currentRow = nineth_part*6; currentCol = 0
+        case '7': currentRow = nineth_part*7; currentCol = 0
+        case '8': currentRow = nineth_part*8; currentCol = 0
         case '9': currentRow = len(buffer)-1; currentCol = 0
       }
     }
