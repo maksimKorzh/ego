@@ -189,7 +189,7 @@ func display_status_bar() {
   var undo_status string
   if mode > 0 { mode_status = " EDIT: "
   } else { mode_status = " VIEW: " }
-  file_status := source_file + " - " + strconv.Itoa(len(text_buffer)) + " lines"
+  file_status := source_file[:8] + " - " + strconv.Itoa(len(text_buffer)) + " lines"
   if modified { file_status += " modified "
   } else { file_status += " saved" }
   cursor_status := " Row " + strconv.Itoa(currentRow+1) + ", Col " + strconv.Itoa(currentCol+1) + " "
