@@ -7,7 +7,7 @@ A bare bones text editor written in Go
 3. Share knowledge with others
 
 # Features
- - modes (somewhat like VIM does)
+ - modes (VIEW/EDIT)
  - display buffer & status bar
  - inserting characters
  - deleting characters
