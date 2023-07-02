@@ -232,7 +232,7 @@ func process_keypress() {
         case '6': currentRow = nineth_part*6; currentCol = 0
         case '7': currentRow = nineth_part*7; currentCol = 0
         case '8': currentRow = nineth_part*8; currentCol = 0
-        case '9': currentRow = len(text_buffer)-1; currentCol = 0
+        case '9': currentRow = nineth_part*9; currentCol = 0
       }
     }
   } else {
