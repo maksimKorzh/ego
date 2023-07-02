@@ -284,7 +284,7 @@ func run_editor() {
 
   for {    
     COLS, ROWS = termbox.Size(); ROWS--
-    if COLS < 80 { COLS = 80 }
+    if COLS < 78 { COLS = 78 }
     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
     scroll_text_buffer()
     display_text_buffer()    

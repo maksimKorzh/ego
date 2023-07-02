@@ -1,36 +1,24 @@
-      ================================================
-        EGO - A bare bones text editor written in Go
-      ================================================
+             ================================================
+               EGO - A bare bones text editor written in Go
+             ================================================
 
-                           CONCEPT
-                          ---------
+                               PROJECT GOALS
+                              ---------------
 
-  Think of the simplest text editor you've ever encountered.
-  What comes to your mind? Windows Notepad right? But it is
-  not as minimalist as possible because of the GUI. So what
-  if we strip down the GUI and stick purely to the terminal
-  environment dropping menus duplicating the most essential
-  keyboard shortcuts and use a single command line argument
-  to provide a file name? This would give us a text editing
-  tool stripped down to the bare bones but yet practical to
-  get work done the simplest and a most straightforward way.
+                    1. Create a text editor for myself
+                    2. Learn Go programming language
+                    3. Share knowledge with others
 
-                          FEATURES
-                         ----------
-  Editing:                                                  
-   - inserting text                                         
-   - deleting text                                          
-   - indentation                                            
-   - copy/paste                                             
-   - undo/redo                                              
-                                                            
-  Navigation                                                
-   - arrow keys /w Ctrl                                     
-   - Home/End                                               
-   - PgUp/PgDn  /w Ctrl                                     
-   - Search next/prev                                       
-                                                            
-  File I/O                         
-   - read file                     
-   - write file                    
-   - create file
+                                  FEATURES
+                                 ----------
+
+                     - modes (somewhat like VIM does)
+                     - display buffer & status bar
+                     - inserting characters
+                     - deleting characters
+                     - inserting lines
+                     - deleting lines
+                     - navigation
+                     - copy/paste
+                     - undo/redo
+                     - file I/O
