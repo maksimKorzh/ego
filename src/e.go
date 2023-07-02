@@ -278,7 +278,7 @@ func run_editor() {
     source_file = os.Args[1]
     read_file(source_file)
   } else {
-    source_file = "noname.txt"
+    source_file = "out.txt"
     text_buffer = append(text_buffer, []rune{})
   }
 

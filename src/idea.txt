@@ -21,4 +21,3 @@
                      - navigation
                      - copy/paste
                      - undo/redo
-                     - file I/O
