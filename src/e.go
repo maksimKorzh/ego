@@ -37,7 +37,6 @@ func read_file(filename string) {
     for i := 0; i < len(line); i++ {
       text_buffer[lineNumber] = append(text_buffer[lineNumber], rune(line[i]))
     }
-
     lineNumber++
   }
   if lineNumber == 0 { text_buffer = append(text_buffer, []rune{}) }
@@ -45,7 +44,8 @@ func read_file(filename string) {
 
 func write_file(filename string) {
   file, err := os.Create(filename)
-  if err != nil { fmt.Println(err) }; defer file.Close()
+  if err != nil { fmt.Println(err) }
+  defer file.Close()
   writer := bufio.NewWriter(file)
 
   for row, line := range text_buffer {
