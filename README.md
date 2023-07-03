@@ -34,6 +34,11 @@ A bare bones text editor written in Go
       HOME: move cursor to the begining of the current line
        END: move cursor to the end of the current line
 
+# Usage
+    $ ego                 # opens editor with 'out.txt' source file name
+    $ ego my_file.txt     # opens editor with 'my_file.txt' if it exists,
+                          # otherwise sets source filename to 'my_file.txt'
+
 # Video Tutorial Series
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/mVFXBZUBe2s/0.jpg)](https://www.youtube.com/watch?v=mVFXBZUBe2s&list=PLLfIBXQeu3aa0NI4RT5OuRQsLo6gtLwGN)
 
@@ -42,6 +47,7 @@ https://github.com/maksimKorzh/ego/releases/tag/0.1
 
 # Build from sources
 ```bash
+cd src
 go mod init ego
 go build -o ego e.go
 ```

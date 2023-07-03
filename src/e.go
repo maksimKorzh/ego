@@ -1,8 +1,8 @@
 package main
 
 import "os"
-import "bufio"
 import "fmt"
+import "bufio"
 import "strconv"
 import "strings"
 
