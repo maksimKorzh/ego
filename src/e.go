@@ -23,7 +23,7 @@ func read_file(filename string) {
 
   if err != nil {
     source_file = filename
-    text_buffer = append(text_buffer, []rune{})
+    text_buffer = append(text_buffer, []rune{}); return
   }
 
   defer file.Close()
@@ -45,7 +45,7 @@ func read_file(filename string) {
 
 func write_file(filename string) {
   file, err := os.Create(filename)
-  if err != nil { fmt.Println(err) }
+  if err != nil { fmt.Println(err) }; defer file.Close()
   writer := bufio.NewWriter(file)
 
   for row, line := range text_buffer {
