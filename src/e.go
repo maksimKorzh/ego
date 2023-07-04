@@ -5,7 +5,8 @@ import "fmt"
 import "bufio"
 import "strconv"
 import "strings"
-
+import "bytes"
+import "os/exec"
 import "github.com/nsf/termbox-go"
 import "github.com/mattn/go-runewidth"
 
@@ -20,26 +21,31 @@ var modified bool
 
 func read_file(filename string) {
   file, err := os.Open(filename)
-
   if err != nil {
     source_file = filename
     text_buffer = append(text_buffer, []rune{}); return
-  }
-
-  defer file.Close()
+  };defer file.Close()
   scanner := bufio.NewScanner(file)
   lineNumber := 0
-
   for scanner.Scan() {
     line := scanner.Text()
     text_buffer = append(text_buffer, []rune{})
-
     for i := 0; i < len(line); i++ {
       text_buffer[lineNumber] = append(text_buffer[lineNumber], rune(line[i]))
-    }
-    lineNumber++
+    };lineNumber++
+  };if lineNumber == 0 { text_buffer = append(text_buffer, []rune{}) }
+}
+
+func read_stream(buffer string) {
+  text_buffer = [][]rune{}
+  lineNumber := 0
+  for _, line := range strings.Split(buffer, "\n") {
+    text_buffer = append(text_buffer, []rune{})
+    for i := 0; i < len(line); i++ {
+      if line[i] == '\r' { continue }
+      text_buffer[lineNumber] = append(text_buffer[lineNumber], rune(line[i]))
+    };lineNumber++
   }
-  if lineNumber == 0 { text_buffer = append(text_buffer, []rune{}) }
 }
 
 func write_file(filename string) {
@@ -47,17 +53,13 @@ func write_file(filename string) {
   if err != nil { fmt.Println(err) }
   defer file.Close()
   writer := bufio.NewWriter(file)
-
   for row, line := range text_buffer {
       newLine := "\n"
       if row == len(text_buffer)-1 { newLine = "" }
       writeLine := string(line) + newLine
       _, err = writer.WriteString(writeLine)
       if err != nil { fmt.Println("Error:", err) }
-  }
-
-  modified = false
-  writer.Flush()
+  }; modified = false; writer.Flush()
 }
 
 func insert_rune(event termbox.Event) {
@@ -73,8 +75,7 @@ func insert_rune(event termbox.Event) {
 }
 
 func delete_rune() {
-  if currentCol > 0 {
-    currentCol--
+  if currentCol > 0 { currentCol--
     deleteRune := make([]rune, len(text_buffer[currentRow])-1)
     copy(deleteRune[:currentCol], text_buffer[currentRow][:currentCol])
     copy(deleteRune[currentCol:], text_buffer[currentRow][currentCol+1:])
@@ -85,8 +86,7 @@ func delete_rune() {
     new_text_buffer := make([][]rune, len(text_buffer)-1)
     copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
     copy(new_text_buffer[currentRow:], text_buffer[currentRow+1:])
-    text_buffer = new_text_buffer
-    currentRow--
+    text_buffer = new_text_buffer;currentRow--
     currentCol = len(text_buffer[currentRow])
     insertLine := make([]rune, len(text_buffer[currentRow]) + len(appendLine))
     copy(insertLine[:len(text_buffer[currentRow])], text_buffer[currentRow])
@@ -101,8 +101,7 @@ func insert_line() {
   beforeLine := make([]rune, len(text_buffer[currentRow][:currentCol]))
   copy(beforeLine, text_buffer[currentRow][:currentCol])
   text_buffer[currentRow] = beforeLine
-  currentRow++
-  currentCol = 0
+  currentRow++; currentCol = 0
   new_text_buffer := make([][]rune, len(text_buffer)+1)
   copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
   new_text_buffer[currentRow] = afterLine
@@ -113,9 +112,9 @@ func insert_line() {
 func cut_line() {
   copy_line()
   if currentRow >= len(text_buffer) || len(text_buffer) < 2 { return }
-  new_text_buffer := make([][]rune, len(text_buffer)-1)                                                   
-  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])                                            
-  copy(new_text_buffer[currentRow:], text_buffer[currentRow+1:])                                             
+  new_text_buffer := make([][]rune, len(text_buffer)-1)
+  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
+  copy(new_text_buffer[currentRow:], text_buffer[currentRow+1:])
   text_buffer = new_text_buffer
   if currentRow > 0 { currentRow--; currentCol = 0 }
 }
@@ -128,10 +127,10 @@ func copy_line() {
 
 func paste_line() {
   if len(copy_buffer) == 0 { currentRow++; currentCol = 0 }
-  new_text_buffer := make([][]rune, len(text_buffer)+1)               
-  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])        
+  new_text_buffer := make([][]rune, len(text_buffer)+1)
+  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
   new_text_buffer[currentRow] = copy_buffer
-  copy(new_text_buffer[currentRow+1:], text_buffer[currentRow:])      
+  copy(new_text_buffer[currentRow+1:], text_buffer[currentRow:])
   text_buffer = new_text_buffer
 }
 
@@ -202,21 +201,20 @@ func get_key() termbox.Event {
   switch event := termbox.PollEvent(); event.Type {
      case termbox.EventKey: keyEvent = event
      case termbox.EventError: panic(event.Err)
-   }
-
-   return keyEvent
+   };return keyEvent
 }
 
 func process_keypress() {
   keyEvent := get_key()
   if keyEvent.Key == termbox.KeyEsc { mode = 0
   } else if keyEvent.Ch != 0 {
-     if mode == 1 { insert_rune(keyEvent); modified = true
+    if mode == 1 { insert_rune(keyEvent); modified = true
     } else {
       nineth_part := int((len(text_buffer)-1)/9)
       switch keyEvent.Ch {
         case 'q': termbox.Close(); os.Exit(0)
         case 'e': mode = 1
+        case 'x': execute_command()
         case 'w': write_file(source_file)
         case 'd': cut_line()
         case 'c': copy_line()
@@ -266,9 +264,55 @@ func process_keypress() {
          currentRow += 1
          currentCol = 0
        }
-    }
-    if currentCol > len(text_buffer[currentRow]) { currentCol = len(text_buffer[currentRow]) }
+    };if currentCol > len(text_buffer[currentRow]) { currentCol = len(text_buffer[currentRow]) }
   }
+}
+
+func execute_command() { ROWS--
+  termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+  display_text_buffer()
+  display_status_bar()
+  termbox.SetCursor(0, ROWS+1)
+  termbox.Flush()
+  command := ""
+  command_loop:
+  for {
+    event := get_key()
+    switch event.Key {
+      case termbox.KeyEsc: break command_loop
+      case termbox.KeyEnter:
+        content := ""
+        for _, line := range text_buffer { content += string(line) + "\n" }
+        is_search := false
+        if strings.ContainsRune(command, '=') { is_search = true }
+        cmd := exec.Command("sed", command)
+        if is_search == true { cmd = exec.Command("sed", "-n", command) }
+        cmd.Stdin = bytes.NewBufferString(content)
+        var output bytes.Buffer
+        cmd.Stdout = &output
+        err := cmd.Run()
+        if err != nil { continue }
+        result := output.String()
+        if len(result) > 0 {
+          if is_search == true {
+            currentRow, err = strconv.Atoi(strings.TrimSpace(strings.Split(result, "\n")[0]))
+            currentRow--; currentCol = 0
+            break command_loop
+          }
+          read_stream(result[:len(result)-1])
+        };if currentRow > len(text_buffer)-1 { currentRow = len(text_buffer)-1 }
+        currentCol = 0
+        break command_loop
+      case termbox.KeySpace: command += " "
+      case termbox.KeyBackspace: if len(command) > 0 { command = command[:len(command)-1] }
+      case termbox.KeyBackspace2: if len(command) > 0 { command = command[:len(command)-1] }
+    };if event.Ch != 0 {
+      command += string(event.Ch)
+      print_message(0, ROWS+1, termbox.ColorDefault, termbox.ColorDefault, command)
+    };termbox.SetCursor(len(command), ROWS+1)
+    for i := len(command); i < COLS; i++ { termbox.SetChar(i, ROWS+1, rune(' ')) }
+    termbox.Flush()
+  };ROWS++
 }
 
 func run_editor() {
@@ -280,14 +324,12 @@ func run_editor() {
   } else {
     source_file = "out.txt"
     text_buffer = append(text_buffer, []rune{})
-  }
-
-  for {    
+  };for {
     COLS, ROWS = termbox.Size(); ROWS--
     if COLS < 78 { COLS = 78 }
     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
     scroll_text_buffer()
-    display_text_buffer()    
+    display_text_buffer()
     display_status_bar()
     termbox.SetCursor(currentCol - offsetX, currentRow - offsetY)
     termbox.Flush()
