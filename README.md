@@ -31,7 +31,7 @@
          l: pull text buffer from undo buffer
          h: toggle syntax highlighting
          x: execute GNUsed command
-       0-9: navigate to the begining of the file
+       0-9: navigate throughout the file
     Arrows: move cursor
     PgDown: scroll 1/4 of the screen downwards
       PgUp: scroll 1/4 of the screen upwards
