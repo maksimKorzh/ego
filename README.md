@@ -1,5 +1,4 @@
-# EGO
-A bare bones text editor written in Go
+# EGO - A bare bones text editor written in Go
 ![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/maksimKorzh/ego/main/assets/ego.png)
 
 # Project goals
