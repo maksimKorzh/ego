@@ -3,19 +3,22 @@ package main
 import "os"
 import "fmt"
 import "bufio"
+import "bytes"
 import "strconv"
 import "strings"
-import "bytes"
+import "unicode"
 import "os/exec"
 import "github.com/nsf/termbox-go"
 import "github.com/mattn/go-runewidth"
 
 var mode int
+var highlight = 1
 var text_buffer = [][]rune{}
 var undo_buffer = [][]rune{}
 var copy_buffer = []rune{}
 var ROWS, COLS int
-var offsetX, offsetY, currentRow, currentCol int
+var offset_col, offset_row int
+var current_row, current_col int
 var source_file string
 var modified bool
 
@@ -40,6 +43,7 @@ func read_stream(buffer string) {
   text_buffer = [][]rune{}
   lineNumber := 0
   for _, line := range strings.Split(buffer, "\n") {
+    modified = true
     text_buffer = append(text_buffer, []rune{})
     for i := 0; i < len(line); i++ {
       if line[i] == '\r' { continue }
@@ -63,74 +67,74 @@ func write_file(filename string) {
 }
 
 func insert_rune(event termbox.Event) {
-  insertRune := make([]rune, len(text_buffer[currentRow])+1)
-  copy(insertRune[:currentCol], text_buffer[currentRow][:currentCol])
-  if event.Key == termbox.KeySpace { insertRune[currentCol] = rune(' ')
-  } else if event.Key == termbox.KeyTab { insertRune[currentCol] = rune(' ')
-  } else { if rune(event.Ch) != '~' { insertRune[currentCol] = rune(event.Ch)
-  } else { insertRune[currentCol] = rune('\t') }}
-  copy(insertRune[currentCol+1:], text_buffer[currentRow][currentCol:])
-  text_buffer[currentRow] = insertRune
-  currentCol++
+  insertRune := make([]rune, len(text_buffer[current_row])+1)
+  copy(insertRune[:current_col], text_buffer[current_row][:current_col])
+  if event.Key == termbox.KeySpace { insertRune[current_col] = rune(' ')
+  } else if event.Key == termbox.KeyTab { insertRune[current_col] = rune(' ')
+  } else { if rune(event.Ch) != '~' { insertRune[current_col] = rune(event.Ch)
+  } else { insertRune[current_col] = rune('\t') }}
+  copy(insertRune[current_col+1:], text_buffer[current_row][current_col:])
+  text_buffer[current_row] = insertRune
+  current_col++
 }
 
 func delete_rune() {
-  if currentCol > 0 { currentCol--
-    deleteRune := make([]rune, len(text_buffer[currentRow])-1)
-    copy(deleteRune[:currentCol], text_buffer[currentRow][:currentCol])
-    copy(deleteRune[currentCol:], text_buffer[currentRow][currentCol+1:])
-    text_buffer[currentRow] = deleteRune
-  } else if currentRow > 0 {
-    appendLine := make([]rune, len(text_buffer[currentRow]))
-    copy(appendLine, text_buffer[currentRow][currentCol:])
+  if current_col > 0 { current_col--
+    deleteRune := make([]rune, len(text_buffer[current_row])-1)
+    copy(deleteRune[:current_col], text_buffer[current_row][:current_col])
+    copy(deleteRune[current_col:], text_buffer[current_row][current_col+1:])
+    text_buffer[current_row] = deleteRune
+  } else if current_row > 0 {
+    appendLine := make([]rune, len(text_buffer[current_row]))
+    copy(appendLine, text_buffer[current_row][current_col:])
     new_text_buffer := make([][]rune, len(text_buffer)-1)
-    copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
-    copy(new_text_buffer[currentRow:], text_buffer[currentRow+1:])
-    text_buffer = new_text_buffer;currentRow--
-    currentCol = len(text_buffer[currentRow])
-    insertLine := make([]rune, len(text_buffer[currentRow]) + len(appendLine))
-    copy(insertLine[:len(text_buffer[currentRow])], text_buffer[currentRow])
-    copy(insertLine[len(text_buffer[currentRow]):], appendLine)
-    text_buffer[currentRow] = insertLine
+    copy(new_text_buffer[:current_row], text_buffer[:current_row])
+    copy(new_text_buffer[current_row:], text_buffer[current_row+1:])
+    text_buffer = new_text_buffer;current_row--
+    current_col = len(text_buffer[current_row])
+    insertLine := make([]rune, len(text_buffer[current_row]) + len(appendLine))
+    copy(insertLine[:len(text_buffer[current_row])], text_buffer[current_row])
+    copy(insertLine[len(text_buffer[current_row]):], appendLine)
+    text_buffer[current_row] = insertLine
   }
 }
 
 func insert_line() {
-  afterLine := make([]rune, len(text_buffer[currentRow][currentCol:]))
-  copy(afterLine, text_buffer[currentRow][currentCol:])
-  beforeLine := make([]rune, len(text_buffer[currentRow][:currentCol]))
-  copy(beforeLine, text_buffer[currentRow][:currentCol])
-  text_buffer[currentRow] = beforeLine
-  currentRow++; currentCol = 0
+  afterLine := make([]rune, len(text_buffer[current_row][current_col:]))
+  copy(afterLine, text_buffer[current_row][current_col:])
+  beforeLine := make([]rune, len(text_buffer[current_row][:current_col]))
+  copy(beforeLine, text_buffer[current_row][:current_col])
+  text_buffer[current_row] = beforeLine
+  current_row++; current_col = 0
   new_text_buffer := make([][]rune, len(text_buffer)+1)
-  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
-  new_text_buffer[currentRow] = afterLine
-  copy(new_text_buffer[currentRow+1:], text_buffer[currentRow:])
+  copy(new_text_buffer[:current_row], text_buffer[:current_row])
+  new_text_buffer[current_row] = afterLine
+  copy(new_text_buffer[current_row+1:], text_buffer[current_row:])
   text_buffer = new_text_buffer
 }
 
 func cut_line() {
   copy_line()
-  if currentRow >= len(text_buffer) || len(text_buffer) < 2 { return }
+  if current_row >= len(text_buffer) || len(text_buffer) < 2 { return }
   new_text_buffer := make([][]rune, len(text_buffer)-1)
-  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
-  copy(new_text_buffer[currentRow:], text_buffer[currentRow+1:])
+  copy(new_text_buffer[:current_row], text_buffer[:current_row])
+  copy(new_text_buffer[current_row:], text_buffer[current_row+1:])
   text_buffer = new_text_buffer
-  if currentRow > 0 { currentRow--; currentCol = 0 }
+  if current_row > 0 { current_row--; current_col = 0 }
 }
 
 func copy_line() {
-  copy_line := make([]rune, len(text_buffer[currentRow]))
-  copy(copy_line, text_buffer[currentRow])
+  copy_line := make([]rune, len(text_buffer[current_row]))
+  copy(copy_line, text_buffer[current_row])
   copy_buffer = copy_line
 }
 
 func paste_line() {
-  if len(copy_buffer) == 0 { currentRow++; currentCol = 0 }
+  if len(copy_buffer) == 0 { current_row++; current_col = 0 }
   new_text_buffer := make([][]rune, len(text_buffer)+1)
-  copy(new_text_buffer[:currentRow], text_buffer[:currentRow])
-  new_text_buffer[currentRow] = copy_buffer
-  copy(new_text_buffer[currentRow+1:], text_buffer[currentRow:])
+  copy(new_text_buffer[:current_row], text_buffer[:current_row])
+  new_text_buffer[current_row] = copy_buffer
+  copy(new_text_buffer[current_row+1:], text_buffer[current_row:])
   text_buffer = new_text_buffer
 }
 
@@ -146,33 +150,98 @@ func pull_text_buffer() {
 }
 
 func scroll_text_buffer() {
-  if currentRow < offsetY { offsetY = currentRow }
-  if currentCol < offsetX { offsetX = currentCol }
-  if currentRow >= offsetY + ROWS { offsetY = currentRow - ROWS+1 }
-  if currentCol >= offsetX + COLS { offsetX = currentCol - COLS+1 }
+  if current_row < offset_row { offset_row = current_row }
+  if current_col < offset_col { offset_col = current_col }
+  if current_row >= offset_row + ROWS { offset_row = current_row - ROWS+1 }
+  if current_col >= offset_col + COLS { offset_col = current_col - COLS+1 }
+}
+
+func highlight_keyword(keyword string, col, row int) {
+  for i := 0; i < len(keyword); i++ {
+    ch := text_buffer[row+offset_row][col+offset_col+i]
+    termbox.SetCell(col+i, row, ch, termbox.ColorWhite | termbox.AttrBold, termbox.ColorDefault);
+  }
+}
+
+func highlight_string(col, row int) int {
+  i := 0; for {
+    if col+offset_col+i == len(text_buffer[row+offset_row]) { return i-1 }
+    ch := text_buffer[row+offset_row][col+offset_col+i]
+    if ch == '"' || ch == '\'' { termbox.SetCell(col+i, row, ch, termbox.ColorYellow, termbox.ColorDefault); return i
+    } else { termbox.SetCell(col+i, row, ch, termbox.ColorYellow, termbox.ColorDefault); i++ }
+  }
+}
+
+func highlight_comment(col, row int) int {
+  i := 0; for {
+    if col+offset_col+i == len(text_buffer[row+offset_row]) { return i-1 }
+    ch := text_buffer[row+offset_row][col+offset_col+i]
+    termbox.SetCell(col+i, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault); i++
+  }
+}
+
+func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
+  char := text_buffer[text_buffer_row][text_buffer_col]
+  next_token := string(text_buffer[text_buffer_row][text_buffer_col:])
+  if unicode.IsDigit(char) {
+    termbox.SetCell(*col, row, char, termbox.ColorYellow | termbox.AttrBold, termbox.ColorDefault)
+  } else if char == '\'' { 
+    termbox.SetCell(*col, row, char, termbox.ColorYellow, termbox.ColorDefault)
+    *col++; *col += highlight_string(*col, row);
+  } else if char == '"' {
+    termbox.SetCell(*col, row, char, termbox.ColorYellow, termbox.ColorDefault)
+    *col++; *col += highlight_string(*col, row);
+  } else if char == '/' {
+    termbox.SetCell(*col, row, char, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
+    index := strings.Index(next_token, "//")
+    if index == 0 { *col += highlight_comment(*col, row) }
+  } else if char == '#' {
+    termbox.SetCell(*col, row, char, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
+    *col += highlight_comment(*col, row)
+  } else {
+    for _,token := range []string{
+      "False", "NaN", "None",
+      "and", "append", "as",
+      "bool", "break", "byte",
+      "case", "catch", "char", "class", "const", "continue",
+      "def", "del", "do", "double",
+      "elif", "else", "enum", "eval", "except", "exec", "exit", "export", "extends", "extern",
+      "finally", "float", "for", "from", "func", "function",
+      "global",
+      "if", "import", "in", "int", "is",
+      "lambda",
+      "nil", "not", "null",
+      "or",
+      "pass", "print",
+      "raise", "return",
+      "self", "short", "signed", "sizeof", "static", "struct", "switch",
+      "this", "throw", "throws", "true", "try", "typedef", "typeof",
+      "undefined", "union", "unsigned", "until",
+      "var", "void",
+      "while", "with", "yield",
+    } { index := strings.Index(next_token, token + " ")
+     if index == 0 { highlight_keyword(token[:len(token)], *col, row); *col += len(token); break
+      } else { termbox.SetCell(*col, row, char, termbox.ColorDefault, termbox.ColorDefault) }
+    }
+  }
 }
 
 func display_text_buffer() {
   var row, col int
   for row = 0; row < ROWS; row++ {
-    text_bufferRow := row + offsetY
+    text_buffer_row := row + offset_row
     for col = 0; col < COLS; col++ {
-      text_bufferCol := col + offsetX
-      if text_bufferRow >= 0 &&  text_bufferRow < len(text_buffer) &&
-         text_bufferCol < len(text_buffer[text_bufferRow]) {
-        if text_buffer[text_bufferRow][text_bufferCol] != rune('\t') {
-          termbox.SetChar(col, row, text_buffer[text_bufferRow][text_bufferCol])
+      text_buffer_col := col + offset_col
+      if text_buffer_row >= 0 &&  text_buffer_row < len(text_buffer) &&
+         text_buffer_col < len(text_buffer[text_buffer_row]) {
+        if text_buffer[text_buffer_row][text_buffer_col] != rune('\t') {
+          if highlight == 1 { highlight_syntax(&col, row, text_buffer_col, text_buffer_row)
+          } else { termbox.SetCell(col, row, text_buffer[text_buffer_row][text_buffer_col],
+                                termbox.ColorDefault, termbox.ColorDefault) }
         } else { termbox.SetCell(col, row, rune(' '), termbox.ColorDefault, termbox.ColorGreen) }
-      } else if row+offsetY > len(text_buffer)-1 {
+      } else if row+offset_row > len(text_buffer)-1 {
     termbox.SetCell(0, row, '*', termbox.ColorBlue, termbox.ColorDefault)}}
     termbox.SetChar(col, row, '\n')
-  }
-}
-
-func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
-  for _, c := range msg {
-    termbox.SetCell(x, y, c, fg, bg)
-    x += runewidth.RuneWidth(c)
   }
 }
 
@@ -187,13 +256,20 @@ func display_status_bar() {
   file_status := source_file[:filename_length] + " - " + strconv.Itoa(len(text_buffer)) + " lines"
   if modified { file_status += " modified "
   } else { file_status += " saved" }
-  cursor_status := " Row " + strconv.Itoa(currentRow+1) + ", Col " + strconv.Itoa(currentCol+1) + " "
+  cursor_status := " Row " + strconv.Itoa(current_row+1) + ", Col " + strconv.Itoa(current_col+1) + " "
   if len(copy_buffer) > 0 { copy_status = " [Copy]" }
   if len(undo_buffer) > 0 { undo_status = " [Undo]" }
   used_space := len(mode_status) + len(file_status) + len(cursor_status) + len(copy_status) + len (undo_status)
   spaces := strings.Repeat(" ", COLS - used_space)
   message := mode_status + file_status + copy_status + undo_status + spaces + cursor_status
   print_message(0, ROWS, termbox.ColorBlack, termbox.ColorWhite, message)
+}
+
+func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
+  for _, c := range msg {
+    termbox.SetCell(x, y, c, fg, bg)
+    x += runewidth.RuneWidth(c)
+  }
 }
 
 func get_key() termbox.Event {
@@ -221,16 +297,17 @@ func process_keypress() {
         case 'p': paste_line()
         case 's': push_text_buffer()
         case 'l': pull_text_buffer()
-        case '0': currentRow = 0; currentCol = 0
-        case '1': currentRow = nineth_part; currentCol = 0
-        case '2': currentRow = nineth_part*2; currentCol = 0
-        case '3': currentRow = nineth_part*3; currentCol = 0
-        case '4': currentRow = nineth_part*4; currentCol = 0
-        case '5': currentRow = nineth_part*5; currentCol = 0
-        case '6': currentRow = nineth_part*6; currentCol = 0
-        case '7': currentRow = nineth_part*7; currentCol = 0
-        case '8': currentRow = nineth_part*8; currentCol = 0
-        case '9': currentRow = nineth_part*9; currentCol = 0
+        case 'h': highlight ^= 1
+        case '0': current_row = 0; current_col = 0
+        case '1': current_row = nineth_part; current_col = 0
+        case '2': current_row = nineth_part*2; current_col = 0
+        case '3': current_row = nineth_part*3; current_col = 0
+        case '4': current_row = nineth_part*4; current_col = 0
+        case '5': current_row = nineth_part*5; current_col = 0
+        case '6': current_row = nineth_part*6; current_col = 0
+        case '7': current_row = nineth_part*7; current_col = 0
+        case '8': current_row = nineth_part*8; current_col = 0
+        case '9': current_row = nineth_part*9; current_col = 0
       }
     }
   } else {
@@ -244,27 +321,27 @@ func process_keypress() {
      case termbox.KeyEnter: if mode == 1 { insert_line(); modified = true }
      case termbox.KeyBackspace: if mode == 1 {delete_rune(); modified = true }
      case termbox.KeyBackspace2: if mode == 1 { delete_rune(); modified = true }
-     case termbox.KeyArrowUp: if currentRow != 0 { currentRow -- }
-     case termbox.KeyArrowDown: if currentRow < len(text_buffer)-1 { currentRow++ }
-     case termbox.KeyHome: currentCol = 0
-     case termbox.KeyEnd: currentCol = len(text_buffer[currentRow])
-     case termbox.KeyPgup: if currentRow - int(ROWS/4) > 0 { currentRow -= int(ROWS/4) }
-     case termbox.KeyPgdn: if currentRow + int(ROWS/4) < len(text_buffer)-1 { currentRow += int(ROWS/4) }
+     case termbox.KeyArrowUp: if current_row != 0 { current_row -- }
+     case termbox.KeyArrowDown: if current_row < len(text_buffer)-1 { current_row++ }
+     case termbox.KeyHome: current_col = 0
+     case termbox.KeyEnd: current_col = len(text_buffer[current_row])
+     case termbox.KeyPgup: if current_row - int(ROWS/4) > 0 { current_row -= int(ROWS/4) }
+     case termbox.KeyPgdn: if current_row + int(ROWS/4) < len(text_buffer)-1 { current_row += int(ROWS/4) }
      case termbox.KeyArrowLeft:
-       if currentCol != 0 {
-         currentCol --
-       } else if currentRow > 0 {
-         currentRow -= 1;
-         currentCol = len(text_buffer[currentRow])
+       if current_col != 0 {
+         current_col --
+       } else if current_row > 0 {
+         current_row -= 1;
+         current_col = len(text_buffer[current_row])
        }
      case termbox.KeyArrowRight:
-       if currentCol < len(text_buffer[currentRow]) {
-         currentCol++
-       } else if currentRow < len(text_buffer)-1 {
-         currentRow += 1
-         currentCol = 0
+       if current_col < len(text_buffer[current_row]) {
+         current_col++
+       } else if current_row < len(text_buffer)-1 {
+         current_row += 1
+         current_col = 0
        }
-    };if currentCol > len(text_buffer[currentRow]) { currentCol = len(text_buffer[currentRow]) }
+    };if current_col > len(text_buffer[current_row]) { current_col = len(text_buffer[current_row]) }
   }
 }
 
@@ -295,13 +372,13 @@ func execute_command() { ROWS--
         result := output.String()
         if len(result) > 0 {
           if is_search == true {
-            currentRow, err = strconv.Atoi(strings.TrimSpace(strings.Split(result, "\n")[0]))
-            currentRow--; currentCol = 0
+            current_row, err = strconv.Atoi(strings.TrimSpace(strings.Split(result, "\n")[0]))
+            current_row--; current_col = 0
             break command_loop
           }
           read_stream(result[:len(result)-1])
-        };if currentRow > len(text_buffer)-1 { currentRow = len(text_buffer)-1 }
-        currentCol = 0
+        };if current_row > len(text_buffer)-1 { current_row = len(text_buffer)-1 }
+        current_col = 0
         break command_loop
       case termbox.KeySpace: command += " "
       case termbox.KeyBackspace: if len(command) > 0 { command = command[:len(command)-1] }
@@ -331,7 +408,7 @@ func run_editor() {
     scroll_text_buffer()
     display_text_buffer()
     display_status_bar()
-    termbox.SetCursor(currentCol - offsetX, currentRow - offsetY)
+    termbox.SetCursor(current_col - offset_col, current_row - offset_row)
     termbox.Flush()
     process_keypress()
   }
