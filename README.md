@@ -2,7 +2,7 @@
 A bare bones text editor written in Go
 
 # Screenshot
-[![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/maksimKorzh/ego/main/assets/ego.png)]
+![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/maksimKorzh/ego/main/assets/ego.png)
 
 # Project goals
 1. Create a text editor for myself
