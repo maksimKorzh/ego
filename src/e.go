@@ -190,6 +190,8 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
   } else if char == '"' {
     termbox.SetCell(*col, row, char, termbox.ColorYellow, termbox.ColorDefault)
     *col++; *col += highlight_string(*col, row);
+  } else if strings.Contains("+-*><=%&|^!:", string(char)) {
+    termbox.SetCell(*col, row, char, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
   } else if char == '/' {
     termbox.SetCell(*col, row, char, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
     index := strings.Index(next_token, "//")
