@@ -1,6 +1,9 @@
 # EGO
 A bare bones text editor written in Go
 
+# Screenshot
+[![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/maksimKorzh/ego/main/assets/ego.png)]
+
 # Project goals
 1. Create a text editor for myself
 2. Learn Go programming language
@@ -29,6 +32,7 @@ A bare bones text editor written in Go
          p: paste line from copy buffer
          s: push text buffer to undo buffer
          l: pull text buffer from undo buffer
+         h: toggle syntax highlighting
          x: execute GNUsed command
        0-9: navigate to the begining of the file
     Arrows: move cursor
