@@ -71,8 +71,7 @@ func insert_rune(event termbox.Event) {
   copy(insertRune[:current_col], text_buffer[current_row][:current_col])
   if event.Key == termbox.KeySpace { insertRune[current_col] = rune(' ')
   } else if event.Key == termbox.KeyTab { insertRune[current_col] = rune(' ')
-  } else { if rune(event.Ch) != '~' { insertRune[current_col] = rune(event.Ch)
-  } else { insertRune[current_col] = rune('\t') }}
+  } else { insertRune[current_col] = rune(event.Ch) }
   copy(insertRune[current_col+1:], text_buffer[current_row][current_col:])
   text_buffer[current_row] = insertRune
   current_col++
