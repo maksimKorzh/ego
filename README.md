@@ -16,6 +16,7 @@ A bare bones text editor written in Go
  - navigation
  - copy/paste
  - undo/redo
+ - syntax highlighting
  - search/replace(GNUsed)
 
 # Key bindigns
