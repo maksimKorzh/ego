@@ -204,7 +204,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
       "False", "NaN", "None",
       "append", "as",
       "bool", "break", "byte",
-      "case", "catch", "ch", "class", "const", "continue",
+      "case", "catch", "class", "const", "continue",
       "def", "del", "do", "double",
       "elif", "else", "enum", "eval", "except", "exec", "exit", "export", "extends", "extern",
       "finally", "float", "for", "from", "func", "function",
