@@ -201,7 +201,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
     *col += highlight_comment(*col, row)
   } else {
     for _,token := range []string{
-      "False", "NaN", "None",
+      "false", "False", "NaN", "None",
       "append", "as",
       "bool", "break", "byte",
       "case", "catch", "class", "const", "continue",
@@ -215,7 +215,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
       "pass", "print",
       "raise", "return",
       "self", "short", "signed", "sizeof", "static", "struct", "switch",
-      "this", "throw", "throws", "true", "try", "typedef", "typeof",
+      "this", "throw", "throws", "true", "True", "try", "typedef", "typeof",
       "undefined", "union", "unsigned", "until",
       "var", "void",
       "while", "with", "yield",
