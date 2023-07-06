@@ -29,26 +29,26 @@ func read_file(filename string) {
     text_buffer = append(text_buffer, []rune{}); return
   };defer file.Close()
   scanner := bufio.NewScanner(file)
-  lineNumber := 0
+  line_number := 0
   for scanner.Scan() {
     line := scanner.Text()
     text_buffer = append(text_buffer, []rune{})
     for i := 0; i < len(line); i++ {
-      text_buffer[lineNumber] = append(text_buffer[lineNumber], rune(line[i]))
-    };lineNumber++
-  };if lineNumber == 0 { text_buffer = append(text_buffer, []rune{}) }
+      text_buffer[line_number] = append(text_buffer[line_number], rune(line[i]))
+    };line_number++
+  };if line_number == 0 { text_buffer = append(text_buffer, []rune{}) }
 }
 
 func read_stream(buffer string) {
   text_buffer = [][]rune{}
-  lineNumber := 0
+  line_number := 0
   for _, line := range strings.Split(buffer, "\n") {
     modified = true
     text_buffer = append(text_buffer, []rune{})
     for i := 0; i < len(line); i++ {
       if line[i] == '\r' { continue }
-      text_buffer[lineNumber] = append(text_buffer[lineNumber], rune(line[i]))
-    };lineNumber++
+      text_buffer[line_number] = append(text_buffer[line_number], rune(line[i]))
+    };line_number++
   }
 }
 
@@ -58,56 +58,56 @@ func write_file(filename string) {
   defer file.Close()
   writer := bufio.NewWriter(file)
   for row, line := range text_buffer {
-      newLine := "\n"
-      if row == len(text_buffer)-1 { newLine = "" }
-      writeLine := string(line) + newLine
-      _, err = writer.WriteString(writeLine)
+      new_line := "\n"
+      if row == len(text_buffer)-1 { new_line = "" }
+      write_line := string(line) + new_line
+      _, err = writer.WriteString(write_line)
       if err != nil { fmt.Println("Error:", err) }
   }; modified = false; writer.Flush()
 }
 
 func insert_rune(event termbox.Event) {
-  insertRune := make([]rune, len(text_buffer[current_row])+1)
-  copy(insertRune[:current_col], text_buffer[current_row][:current_col])
-  if event.Key == termbox.KeySpace { insertRune[current_col] = rune(' ')
-  } else if event.Key == termbox.KeyTab { insertRune[current_col] = rune(' ')
-  } else { insertRune[current_col] = rune(event.Ch) }
-  copy(insertRune[current_col+1:], text_buffer[current_row][current_col:])
-  text_buffer[current_row] = insertRune
+  insert_line := make([]rune, len(text_buffer[current_row])+1)
+  copy(insert_line[:current_col], text_buffer[current_row][:current_col])
+  if event.Key == termbox.KeySpace { insert_line[current_col] = rune(' ')
+  } else if event.Key == termbox.KeyTab { insert_line[current_col] = rune(' ')
+  } else { insert_line[current_col] = rune(event.Ch) }
+  copy(insert_line[current_col+1:], text_buffer[current_row][current_col:])
+  text_buffer[current_row] = insert_line
   current_col++
 }
 
 func delete_rune() {
   if current_col > 0 { current_col--
-    deleteRune := make([]rune, len(text_buffer[current_row])-1)
-    copy(deleteRune[:current_col], text_buffer[current_row][:current_col])
-    copy(deleteRune[current_col:], text_buffer[current_row][current_col+1:])
-    text_buffer[current_row] = deleteRune
+    delete_line := make([]rune, len(text_buffer[current_row])-1)
+    copy(delete_line[:current_col], text_buffer[current_row][:current_col])
+    copy(delete_line[current_col:], text_buffer[current_row][current_col+1:])
+    text_buffer[current_row] = delete_line
   } else if current_row > 0 {
-    appendLine := make([]rune, len(text_buffer[current_row]))
-    copy(appendLine, text_buffer[current_row][current_col:])
+    append_line := make([]rune, len(text_buffer[current_row]))
+    copy(append_line, text_buffer[current_row][current_col:])
     new_text_buffer := make([][]rune, len(text_buffer)-1)
     copy(new_text_buffer[:current_row], text_buffer[:current_row])
     copy(new_text_buffer[current_row:], text_buffer[current_row+1:])
     text_buffer = new_text_buffer;current_row--
     current_col = len(text_buffer[current_row])
-    insertLine := make([]rune, len(text_buffer[current_row]) + len(appendLine))
-    copy(insertLine[:len(text_buffer[current_row])], text_buffer[current_row])
-    copy(insertLine[len(text_buffer[current_row]):], appendLine)
-    text_buffer[current_row] = insertLine
+    insert_line := make([]rune, len(text_buffer[current_row]) + len(append_line))
+    copy(insert_line[:len(text_buffer[current_row])], text_buffer[current_row])
+    copy(insert_line[len(text_buffer[current_row]):], append_line)
+    text_buffer[current_row] = insert_line
   }
 }
 
 func insert_line() {
-  afterLine := make([]rune, len(text_buffer[current_row][current_col:]))
-  copy(afterLine, text_buffer[current_row][current_col:])
-  beforeLine := make([]rune, len(text_buffer[current_row][:current_col]))
-  copy(beforeLine, text_buffer[current_row][:current_col])
-  text_buffer[current_row] = beforeLine
+  right_line := make([]rune, len(text_buffer[current_row][current_col:]))
+  copy(right_line, text_buffer[current_row][current_col:])
+  left_line := make([]rune, len(text_buffer[current_row][:current_col]))
+  copy(left_line, text_buffer[current_row][:current_col])
+  text_buffer[current_row] = left_line
   current_row++; current_col = 0
   new_text_buffer := make([][]rune, len(text_buffer)+1)
   copy(new_text_buffer[:current_row], text_buffer[:current_row])
-  new_text_buffer[current_row] = afterLine
+  new_text_buffer[current_row] = right_line
   copy(new_text_buffer[current_row+1:], text_buffer[current_row:])
   text_buffer = new_text_buffer
 }
@@ -180,31 +180,31 @@ func highlight_comment(col, row int) int {
 }
 
 func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
-  char := text_buffer[text_buffer_row][text_buffer_col]
+  ch := text_buffer[text_buffer_row][text_buffer_col]
   next_token := string(text_buffer[text_buffer_row][text_buffer_col:])
-  if unicode.IsDigit(char) {
-    termbox.SetCell(*col, row, char, termbox.ColorYellow | termbox.AttrBold, termbox.ColorDefault)
-  } else if char == '\'' { 
-    termbox.SetCell(*col, row, char, termbox.ColorYellow, termbox.ColorDefault)
+  if unicode.IsDigit(ch) {
+    termbox.SetCell(*col, row, ch, termbox.ColorYellow | termbox.AttrBold, termbox.ColorDefault)
+  } else if ch == '\'' { 
+    termbox.SetCell(*col, row, ch, termbox.ColorYellow, termbox.ColorDefault)
     *col++; *col += highlight_string(*col, row);
-  } else if char == '"' {
-    termbox.SetCell(*col, row, char, termbox.ColorYellow, termbox.ColorDefault)
+  } else if ch == '"' {
+    termbox.SetCell(*col, row, ch, termbox.ColorYellow, termbox.ColorDefault)
     *col++; *col += highlight_string(*col, row);
-  } else if strings.Contains("+-*><=%&|^!:", string(char)) {
-    termbox.SetCell(*col, row, char, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
-  } else if char == '/' {
-    termbox.SetCell(*col, row, char, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
+  } else if strings.Contains("+-*><=%&|^!:", string(ch)) {
+    termbox.SetCell(*col, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
+  } else if ch == '/' {
+    termbox.SetCell(*col, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
     index := strings.Index(next_token, "//")
     if index == 0 { *col += highlight_comment(*col, row) }
-  } else if char == '#' {
-    termbox.SetCell(*col, row, char, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
+  } else if ch == '#' {
+    termbox.SetCell(*col, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
     *col += highlight_comment(*col, row)
   } else {
     for _,token := range []string{
       "False", "NaN", "None",
-      "and", "append", "as",
+      "append", "as",
       "bool", "break", "byte",
-      "case", "catch", "char", "class", "const", "continue",
+      "case", "catch", "ch", "class", "const", "continue",
       "def", "del", "do", "double",
       "elif", "else", "enum", "eval", "except", "exec", "exit", "export", "extends", "extern",
       "finally", "float", "for", "from", "func", "function",
@@ -212,7 +212,6 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
       "if", "import", "in", "int", "is",
       "lambda",
       "nil", "not", "null",
-      "or",
       "pass", "print",
       "raise", "return",
       "self", "short", "signed", "sizeof", "static", "struct", "switch",
@@ -222,7 +221,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
       "while", "with", "yield",
     } { index := strings.Index(next_token, token + " ")
      if index == 0 { highlight_keyword(token[:len(token)], *col, row); *col += len(token); break
-      } else { termbox.SetCell(*col, row, char, termbox.ColorDefault, termbox.ColorDefault) }
+      } else { termbox.SetCell(*col, row, ch, termbox.ColorDefault, termbox.ColorDefault) }
     }
   }
 }
@@ -274,21 +273,21 @@ func print_message(x, y int, fg, bg termbox.Attribute, msg string) {
 }
 
 func get_key() termbox.Event {
-  var keyEvent termbox.Event
+  var key_event termbox.Event
   switch event := termbox.PollEvent(); event.Type {
-     case termbox.EventKey: keyEvent = event
+     case termbox.EventKey: key_event = event
      case termbox.EventError: panic(event.Err)
-   };return keyEvent
+   };return key_event
 }
 
 func process_keypress() {
-  keyEvent := get_key()
-  if keyEvent.Key == termbox.KeyEsc { mode = 0
-  } else if keyEvent.Ch != 0 {
-    if mode == 1 { insert_rune(keyEvent); modified = true
+  key_event := get_key()
+  if key_event.Key == termbox.KeyEsc { mode = 0
+  } else if key_event.Ch != 0 {
+    if mode == 1 { insert_rune(key_event); modified = true
     } else {
       nineth_part := int((len(text_buffer)-1)/9)
-      switch keyEvent.Ch {
+      switch key_event.Ch {
         case 'q': termbox.Close(); os.Exit(0)
         case 'e': mode = 1
         case 'x': execute_command()
@@ -312,13 +311,13 @@ func process_keypress() {
       }
     }
   } else {
-    switch keyEvent.Key {
+    switch key_event.Key {
      case termbox.KeyTab:
        if mode == 1 {
-         for i:= 0; i < 4; i++ { insert_rune(keyEvent); }
+         for i:= 0; i < 4; i++ { insert_rune(key_event); }
          modified = true
        }
-     case termbox.KeySpace: if mode == 1 { insert_rune(keyEvent); modified = true }
+     case termbox.KeySpace: if mode == 1 { insert_rune(key_event); modified = true }
      case termbox.KeyEnter: if mode == 1 { insert_line(); modified = true }
      case termbox.KeyBackspace: if mode == 1 {delete_rune(); modified = true }
      case termbox.KeyBackspace2: if mode == 1 { delete_rune(); modified = true }
