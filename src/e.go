@@ -202,10 +202,9 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
   } else {
     for _,token := range []string{
       "false", "False", "NaN", "None",
-      "append", "as",
       "bool", "break", "byte",
       "case", "catch", "class", "const", "continue",
-      "def", "del", "do", "double",
+      "def", "do", "double",
       "elif", "else", "enum", "eval", "except", "exec", "exit", "export", "extends", "extern",
       "finally", "float", "for", "from", "func", "function",
       "global",
