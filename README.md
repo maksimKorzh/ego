@@ -75,7 +75,7 @@ A bare bones cross-platform terminal based text editor written in Go
 # Video Tutorial Series
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/mVFXBZUBe2s/0.jpg)](https://www.youtube.com/watch?v=mVFXBZUBe2s&list=PLLfIBXQeu3aa0NI4RT5OuRQsLo6gtLwGN)
 
-# Release
+# Latest Release
 https://github.com/maksimKorzh/ego/releases/
 
 # Build from sources
