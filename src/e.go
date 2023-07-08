@@ -236,10 +236,16 @@ func display_text_buffer() {
         if text_buffer[text_buffer_row][text_buffer_col] != rune('\t') {
           if highlight == 1 { highlight_syntax(&col, row, text_buffer_col, text_buffer_row)
           } else { termbox.SetCell(col, row, text_buffer[text_buffer_row][text_buffer_col],
-                                termbox.ColorDefault, termbox.ColorDefault) }
+                   termbox.ColorDefault, termbox.ColorDefault) }
         } else { termbox.SetCell(col, row, rune(' '), termbox.ColorDefault, termbox.ColorGreen) }
       } else if row+offset_row > len(text_buffer)-1 {
     termbox.SetCell(0, row, '*', termbox.ColorBlue, termbox.ColorDefault)}}
+    if row == current_row - offset_row && highlight == 1 {
+      for col = 0; col < COLS; col++ {
+        current_cell := termbox.GetCell(col, row)
+        termbox.SetCell(col, row, current_cell.Ch, current_cell.Fg, termbox.ColorBlue)
+      }
+    }
     termbox.SetChar(col, row, '\n')
   }
 }
