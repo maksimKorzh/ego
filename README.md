@@ -94,11 +94,15 @@ paypal_email = '"maksymkorzh@gmail.com"'
 # Patreon
 patreon_url = 'https://www.patreon.com/code_monkey_king'
 
+# Features
+useful_str = 'Did you like the project? (Yes/No): '
+instructive_str = 'Did you enjoy following YouTube series? (Yes/No) '
+
 # Ask user feedback
-project_is_useful = True if input('Did you like the project? (Yes/No): ') == 'Yes' else False
+project_is_useful = True if input(useful_str) == 'Yes' else False
 
 # Ask viewer feedback
-series_is_instructive = True if input('Did you enjoy following YouTube series? (Yes/No) == 'Yes' else False
+series_is_instructive = True if input(instructive_str) == 'Yes' else False
 
 # Ask for donations
 if project_is_useful or series_is_instructive:
