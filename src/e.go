@@ -63,7 +63,7 @@ func write_file(filename string) {
       write_line := string(line) + new_line
       _, err = writer.WriteString(write_line)
       if err != nil { fmt.Println("Error:", err) }
-  }; modified = false; writer.Flush()
+  }; writer.Flush(); modified = false;
 }
 
 func insert_rune(event termbox.Event) {
@@ -251,7 +251,7 @@ func display_status_bar() {
   if mode > 0 { mode_status = " EDIT: "
   } else { mode_status = " VIEW: " }
   filename_length := len(source_file)
-  if filename_length > 8 { filename_length = 8 }
+  if filename_length > 24 { filename_length = 24 }
   file_status := source_file[:filename_length] + " - " + strconv.Itoa(len(text_buffer)) + " lines"
   if modified { file_status += " modified "
   } else { file_status += " saved" }
@@ -277,6 +277,53 @@ func get_key() termbox.Event {
      case termbox.EventKey: key_event = event
      case termbox.EventError: panic(event.Err)
    };return key_event
+}
+
+func execute_command() { ROWS--
+  termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+  display_text_buffer()
+  display_status_bar()
+  termbox.SetCursor(0, ROWS+1)
+  termbox.Flush()
+  command := ""
+  command_loop:
+  for {
+    event := get_key()
+    switch event.Key {
+      case termbox.KeyEsc: break command_loop
+      case termbox.KeyEnter:
+        content := ""
+        for _, line := range text_buffer { content += string(line) + "\n" }
+        is_search := false
+        if strings.ContainsRune(command, '=') { is_search = true }
+        cmd := exec.Command("sed", command)
+        if is_search == true { cmd = exec.Command("sed", "-n", command) }
+        cmd.Stdin = bytes.NewBufferString(content)
+        var output bytes.Buffer
+        cmd.Stdout = &output
+        err := cmd.Run()
+        if err != nil { continue }
+        result := output.String()
+        if len(result) > 0 {
+          if is_search == true {
+            current_row, err = strconv.Atoi(strings.TrimSpace(strings.Split(result, "\n")[0]))
+            current_row--; current_col = 0
+            break command_loop
+          }
+          read_stream(result[:len(result)-1])
+        };if current_row > len(text_buffer)-1 { current_row = len(text_buffer)-1 }
+        current_col = 0
+        break command_loop
+      case termbox.KeySpace: command += " "
+      case termbox.KeyBackspace: if len(command) > 0 { command = command[:len(command)-1] }
+      case termbox.KeyBackspace2: if len(command) > 0 { command = command[:len(command)-1] }
+    };if event.Ch != 0 {
+      command += string(event.Ch)
+      print_message(0, ROWS+1, termbox.ColorDefault, termbox.ColorDefault, command)
+    };termbox.SetCursor(len(command), ROWS+1)
+    for i := len(command); i < COLS; i++ { termbox.SetChar(i, ROWS+1, rune(' ')) }
+    termbox.Flush()
+  };ROWS++
 }
 
 func process_keypress() {
@@ -342,53 +389,6 @@ func process_keypress() {
        }
     };if current_col > len(text_buffer[current_row]) { current_col = len(text_buffer[current_row]) }
   }
-}
-
-func execute_command() { ROWS--
-  termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-  display_text_buffer()
-  display_status_bar()
-  termbox.SetCursor(0, ROWS+1)
-  termbox.Flush()
-  command := ""
-  command_loop:
-  for {
-    event := get_key()
-    switch event.Key {
-      case termbox.KeyEsc: break command_loop
-      case termbox.KeyEnter:
-        content := ""
-        for _, line := range text_buffer { content += string(line) + "\n" }
-        is_search := false
-        if strings.ContainsRune(command, '=') { is_search = true }
-        cmd := exec.Command("sed", command)
-        if is_search == true { cmd = exec.Command("sed", "-n", command) }
-        cmd.Stdin = bytes.NewBufferString(content)
-        var output bytes.Buffer
-        cmd.Stdout = &output
-        err := cmd.Run()
-        if err != nil { continue }
-        result := output.String()
-        if len(result) > 0 {
-          if is_search == true {
-            current_row, err = strconv.Atoi(strings.TrimSpace(strings.Split(result, "\n")[0]))
-            current_row--; current_col = 0
-            break command_loop
-          }
-          read_stream(result[:len(result)-1])
-        };if current_row > len(text_buffer)-1 { current_row = len(text_buffer)-1 }
-        current_col = 0
-        break command_loop
-      case termbox.KeySpace: command += " "
-      case termbox.KeyBackspace: if len(command) > 0 { command = command[:len(command)-1] }
-      case termbox.KeyBackspace2: if len(command) > 0 { command = command[:len(command)-1] }
-    };if event.Ch != 0 {
-      command += string(event.Ch)
-      print_message(0, ROWS+1, termbox.ColorDefault, termbox.ColorDefault, command)
-    };termbox.SetCursor(len(command), ROWS+1)
-    for i := len(command); i < COLS; i++ { termbox.SetChar(i, ROWS+1, rune(' ')) }
-    termbox.Flush()
-  };ROWS++
 }
 
 func run_editor() {
