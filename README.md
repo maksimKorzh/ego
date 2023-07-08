@@ -84,3 +84,30 @@ cd src
 go mod init ego
 go build -o ego e.go
 ```
+
+# Donations
+
+```python
+# PayPal                                                                        
+paypal_email = '"maksymkorzh@gmail.com"'
+
+# Patreon
+patreon_url = 'https://www.patreon.com/code_monkey_king'
+
+# Ask user feedback
+project_is_useful = True if input('Did you like the project? (Yes/No): ') == 'Ye
+
+# Ask viewer feedback
+series_is_instructive = True if input('Did you enjoy following YouTube series? (
+
+# Ask for donations
+if project_is_useful or series_is_instructive:
+  print("\nYou can support me via:" +
+        "\n  PayPal", paypal_email,
+        "\n  Patreon", patreon_url)
+else:
+  print("\nThank you for passing by!")
+  print("\nPlease consider subscribing to my YouTube channel:\n" +
+        "https://www.youtube.com/@monkey_see_monkey_do")
+
+```
