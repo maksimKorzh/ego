@@ -92,7 +92,7 @@ go build -o ego e.go
 paypal_email = '"maksymkorzh@gmail.com"'
 
 # Patreon
-patreon_url = 'https://www.patreon.com/code_monkey_king'
+patreon_url = '"https://www.patreon.com/code_monkey_king"'
 
 # Features
 useful_str = 'Did you like the project? (Yes/No): '
