@@ -243,7 +243,7 @@ func display_text_buffer() {
     if row == current_row - offset_row && highlight == 1 {
       for col = 0; col < COLS; col++ {
         current_cell := termbox.GetCell(col, row)
-        termbox.SetCell(col, row, current_cell.Ch, current_cell.Fg, termbox.ColorBlue)
+        termbox.SetCell(col, row, current_cell.Ch, termbox.ColorDefault, termbox.ColorBlue)
       }
     }
     termbox.SetChar(col, row, '\n')
