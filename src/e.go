@@ -246,6 +246,8 @@ func display_text_buffer() {
       } else if row+offset_row > len(text_buffer)-1 {
     termbox.SetCell(0, row, '*', termbox.ColorBlue, termbox.ColorDefault)}}
     if row == current_row - offset_row && highlight == 1 {
+      COLS, ROWS := termbox.Size(); ROWS--
+      if row >= ROWS { continue }
       for col = 0; col < COLS; col++ {
         current_cell := termbox.GetCell(col, row)
         termbox.SetCell(col, row, current_cell.Ch, termbox.ColorDefault, termbox.ColorBlue)
