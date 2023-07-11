@@ -12,6 +12,7 @@ import "github.com/nsf/termbox-go"
 import "github.com/mattn/go-runewidth"
 
 var mode = 0
+var line_number_width = 0
 var highlight = 1
 var text_buffer = [][]rune{}
 var undo_buffer = [][]rune{}
@@ -152,13 +153,13 @@ func scroll_text_buffer() {
   if current_row < offset_row { offset_row = current_row }
   if current_col < offset_col { offset_col = current_col }
   if current_row >= offset_row + ROWS { offset_row = current_row - ROWS+1 }
-  if current_col >= offset_col + COLS { offset_col = current_col - COLS+1 }
+  if current_col >= offset_col + COLS-line_number_width { offset_col = current_col - COLS+line_number_width+1 }
 }
 
 func highlight_keyword(keyword string, col, row int) {
   for i := 0; i < len(keyword); i++ {
     ch := text_buffer[row+offset_row][col+offset_col+i]
-    termbox.SetCell(col+i, row, ch, termbox.ColorWhite | termbox.AttrBold, termbox.ColorDefault);
+    termbox.SetCell(col+i+line_number_width, row, ch, termbox.ColorWhite | termbox.AttrBold, termbox.ColorDefault);
   }
 }
 
@@ -166,8 +167,8 @@ func highlight_string(col, row int) int {
   i := 0; for {
     if col+offset_col+i == len(text_buffer[row+offset_row]) { return i-1 }
     ch := text_buffer[row+offset_row][col+offset_col+i]
-    if ch == '"' || ch == '\'' { termbox.SetCell(col+i, row, ch, termbox.ColorYellow, termbox.ColorDefault); return i
-    } else { termbox.SetCell(col+i, row, ch, termbox.ColorYellow, termbox.ColorDefault); i++ }
+    if ch == '"' || ch == '\'' { termbox.SetCell(col+i+line_number_width, row, ch, termbox.ColorYellow, termbox.ColorDefault); return i
+    } else { termbox.SetCell(col+i+line_number_width, row, ch, termbox.ColorYellow, termbox.ColorDefault); i++ }
   }
 }
 
@@ -175,7 +176,7 @@ func highlight_comment(col, row int) int {
   i := 0; for {
     if col+offset_col+i == len(text_buffer[row+offset_row]) { return i-1 }
     ch := text_buffer[row+offset_row][col+offset_col+i]
-    termbox.SetCell(col+i, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault); i++
+    termbox.SetCell(col+i+line_number_width, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault); i++
   }
 }
 
@@ -183,21 +184,21 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
   ch := text_buffer[text_buffer_row][text_buffer_col]
   next_token := string(text_buffer[text_buffer_row][text_buffer_col:])
   if unicode.IsDigit(ch) {
-    termbox.SetCell(*col, row, ch, termbox.ColorYellow | termbox.AttrBold, termbox.ColorDefault)
+    termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorYellow | termbox.AttrBold, termbox.ColorDefault)
   } else if ch == '\'' { 
-    termbox.SetCell(*col, row, ch, termbox.ColorYellow, termbox.ColorDefault)
+    termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorYellow, termbox.ColorDefault)
     *col++; *col += highlight_string(*col, row);
   } else if ch == '"' {
-    termbox.SetCell(*col, row, ch, termbox.ColorYellow, termbox.ColorDefault)
+    termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorYellow, termbox.ColorDefault)
     *col++; *col += highlight_string(*col, row);
   } else if strings.Contains("+-*><=%&|^!:", string(ch)) {
-    termbox.SetCell(*col, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
+    termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
   } else if ch == '/' {
-    termbox.SetCell(*col, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
+    termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
     index := strings.Index(next_token, "//")
     if index == 0 { *col += highlight_comment(*col, row) }
   } else if ch == '#' {
-    termbox.SetCell(*col, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
+    termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
     *col += highlight_comment(*col, row)
   } else {
     for _,token := range []string{
@@ -205,7 +206,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
       "bool", "break", "byte",
       "case", "catch", "class", "const", "continue",
       "def", "do", "double", "as",
-      "elif", "else", "enum", "eval", "except", "exec", "exit", "export", "extends", "extern",
+      "elif", "else", "enum", "except", "export", "extends", "extern",
       "finally", "float", "for", "from", "func", "function",
       "global",
       "if", "import", "in", "int", "is",
@@ -220,7 +221,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
       "while", "with", "yield",
     } { index := strings.Index(next_token, token + " ")
      if index == 0 { highlight_keyword(token[:len(token)], *col, row); *col += len(token); break
-      } else { termbox.SetCell(*col, row, ch, termbox.ColorDefault, termbox.ColorDefault) }
+      } else { termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorDefault, termbox.ColorDefault) }
     }
   }
 }
@@ -231,11 +232,15 @@ func display_text_buffer() {
     text_buffer_row := row + offset_row
     for col = 0; col < COLS; col++ {
       text_buffer_col := col + offset_col
-      if text_buffer_row >= 0 &&  text_buffer_row < len(text_buffer) &&
+      if text_buffer_row < len(text_buffer) {
+        line_number_offset := line_number_width - len(strconv.Itoa(text_buffer_row+1))-1
+        print_message(line_number_offset, row,
+        termbox.ColorGreen, termbox.ColorDefault, strconv.Itoa(text_buffer_row+1))
+      };if text_buffer_row >= 0 &&  text_buffer_row < len(text_buffer) &&
          text_buffer_col < len(text_buffer[text_buffer_row]) {
         if text_buffer[text_buffer_row][text_buffer_col] != rune('\t') {
           if highlight == 1 { highlight_syntax(&col, row, text_buffer_col, text_buffer_row)
-          } else { termbox.SetCell(col, row, text_buffer[text_buffer_row][text_buffer_col],
+          } else { termbox.SetCell(col+line_number_width, row, text_buffer[text_buffer_row][text_buffer_col],
                    termbox.ColorDefault, termbox.ColorDefault) }
         } else { termbox.SetCell(col, row, rune(' '), termbox.ColorDefault, termbox.ColorGreen) }
       } else if row+offset_row > len(text_buffer)-1 {
@@ -407,13 +412,14 @@ func run_editor() {
     source_file = "out.txt"
     text_buffer = append(text_buffer, []rune{})
   };for {
-    COLS, ROWS = termbox.Size(); ROWS--
+    line_number_width = len(strconv.Itoa(len(text_buffer)))+1
+    COLS, ROWS = termbox.Size(); ROWS--;
     if COLS < 78 { COLS = 78 }
     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
     scroll_text_buffer()
     display_text_buffer()
     display_status_bar()
-    termbox.SetCursor(current_col - offset_col, current_row - offset_row)
+    termbox.SetCursor(current_col - offset_col+line_number_width, current_row - offset_row)
     termbox.Flush()
     process_keypress()
   }
