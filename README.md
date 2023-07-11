@@ -20,7 +20,7 @@ A bare bones cross-platform terminal based text editor written in Go
  - copy/paste
  - undo/redo
  - syntax highlighting
- - search/replace(GNUsed)
+ - search/replace(GNUsed as plugin)
 
 # Key bindigns
        ESC: enter the 'VIEW' mode
