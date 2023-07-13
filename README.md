@@ -4,11 +4,6 @@ A bare bones cross-platform terminal based text editor written in Go
 # Screenshot
 ![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/maksimKorzh/ego/main/assets/ego.png)
 
-# Project goals
-1. Create a text editor for myself
-2. Learn Go programming language
-3. Share knowledge with others
-
 # Features
  - modes (VIEW/EDIT)
  - display buffer & status bar
