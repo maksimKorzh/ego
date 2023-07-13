@@ -34,8 +34,9 @@ func read_file(filename string) {
   for scanner.Scan() {
     line := scanner.Text()
     text_buffer = append(text_buffer, []rune{})
-    for i := 0; i < len(line); i++ {
-      text_buffer[line_number] = append(text_buffer[line_number], rune(line[i]))
+    count := 0; for _, ch := range line {
+      text_buffer[line_number] = append(text_buffer[line_number], rune(ch))
+      count += runewidth.RuneWidth(ch)
     };line_number++
   };if line_number == 0 { text_buffer = append(text_buffer, []rune{}) }
 }
@@ -46,9 +47,10 @@ func read_stream(buffer string) {
   for _, line := range strings.Split(buffer, "\n") {
     modified = true
     text_buffer = append(text_buffer, []rune{})
-    for i := 0; i < len(line); i++ {
-      if line[i] == '\r' { continue }
-      text_buffer[line_number] = append(text_buffer[line_number], rune(line[i]))
+    count := 0; for _, ch := range line {
+      if ch == '\r' { continue }
+      text_buffer[line_number] = append(text_buffer[line_number], rune(ch))
+      count += runewidth.RuneWidth(ch)
     };line_number++
   }
 }
@@ -185,7 +187,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
   next_token := string(text_buffer[text_buffer_row][text_buffer_col:])
   if unicode.IsDigit(ch) {
     termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorYellow | termbox.AttrBold, termbox.ColorDefault)
-  } else if ch == '\'' { 
+  } else if ch == '\'' {
     termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorYellow, termbox.ColorDefault)
     *col++; *col += highlight_string(*col, row);
   } else if ch == '"' {
@@ -333,7 +335,10 @@ func execute_command() { ROWS--
     };if event.Ch != 0 {
       command += string(event.Ch)
       print_message(0, ROWS+1, termbox.ColorDefault, termbox.ColorDefault, command)
-    };termbox.SetCursor(len(command), ROWS+1)
+    };
+    command_length := 0
+    for _,ch := range command { if ch > 0 { command_length++} }
+    termbox.SetCursor(command_length, ROWS+1)
     for i := len(command); i < COLS; i++ { termbox.SetChar(i, ROWS+1, rune(' ')) }
     termbox.Flush()
   };ROWS++
