@@ -161,7 +161,7 @@ func scroll_text_buffer() {
 func highlight_keyword(keyword string, col, row int) {
   for i := 0; i < len(keyword); i++ {
     ch := text_buffer[row+offset_row][col+offset_col+i]
-    termbox.SetCell(col+i+line_number_width, row, ch, termbox.ColorWhite | termbox.AttrBold, termbox.ColorDefault);
+    termbox.SetCell(col+i+line_number_width, row, ch, termbox.ColorRed | termbox.AttrBold, termbox.ColorDefault);
   }
 }
 
@@ -204,23 +204,16 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
     *col += highlight_comment(*col, row)
   } else {
     for _,token := range []string{
-      "false", "False", "NaN", "None",
-      "bool", "break", "byte",
-      "case", "catch", "class", "const", "continue",
-      "def", "do", "double", "as",
+      "false", "False", "NaN", "None", "bool", "break", "byte",
+      "case", "catch", "class", "const", "continue", "def", "do",
       "elif", "else", "enum", "export", "extends", "extern",
       "finally", "float", "for", "from", "func", "function",
-      "global",
-      "if", "import", "in", "int", "is",
-      "lambda",
-      "nil", "not", "null",
-      "pass", "print",
-      "raise", "return",
+      "global", "if", "import", "in", "int", "is", "lambda",
+      "nil", "not", "null", "pass", "print", "raise", "return",
       "self", "short", "signed", "sizeof", "static", "struct", "switch",
       "this", "throw", "throws", "true", "True", "typedef", "typeof",
-      "undefined", "union", "unsigned", "until",
-      "var", "void",
-      "while", "with", "yield",
+      "undefined", "union", "unsigned", "until", "var", "void",
+      "while", "with", "yield", "double",
     } { index := strings.Index(next_token, token + " ")
      if index == 0 { highlight_keyword(token[:len(token)], *col, row); *col += len(token); break
       } else { termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorDefault, termbox.ColorDefault) }
