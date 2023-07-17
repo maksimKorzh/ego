@@ -208,7 +208,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
       "case", "catch", "class", "const", "continue", "def", "do",
       "elif", "else", "enum", "export", "extends", "extern",
       "finally", "float", "for", "from", "func", "function",
-      "global", "if", "import", "in", "int", "is", "lambda",
+      "global", "if", "import", "in", "int", "lambda",
       "nil", "not", "null", "pass", "print", "raise", "return",
       "self", "short", "signed", "sizeof", "static", "struct", "switch",
       "this", "throw", "throws", "true", "True", "typedef", "typeof",
