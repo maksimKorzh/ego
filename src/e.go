@@ -11,7 +11,7 @@ import "os/exec"
 import "github.com/nsf/termbox-go"
 import "github.com/mattn/go-runewidth"
 
-var mode = 0
+var mode = 1
 var line_number_width = 0
 var highlight = 1
 var text_buffer = [][]rune{}
