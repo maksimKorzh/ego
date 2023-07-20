@@ -115,6 +115,11 @@ func insert_line() {
   text_buffer = new_text_buffer
 }
 
+func cat_line() {
+  for i := current_col; i > 0; i-- { delete_rune() }
+  if current_row > 0 { delete_rune() }
+}
+
 func cut_line() {
   copy_line()
   if current_row >= len(text_buffer) || len(text_buffer) < 2 { return }
@@ -349,6 +354,7 @@ func process_keypress() {
         case 'e': mode = 1
         case 'x': execute_command()
         case 'w': write_file(source_file)
+        case 'a': cat_line()
         case 'd': cut_line()
         case 'c': copy_line()
         case 'p': paste_line()

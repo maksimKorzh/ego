@@ -22,6 +22,7 @@ A bare bones cross-platform terminal based text editor written in Go
          e: enter the 'EDIT' mode
          q: quit from the text editor
          w: write file to disk
+         a: cat current line to previous one
          d: cut current line to copy buffer
          c: copy current line to copy buffer
          p: paste line from copy buffer
