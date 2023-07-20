@@ -9,6 +9,7 @@ A bare bones cross-platform terminal based text editor written in Go
  - display buffer & status bar
  - inserting characters
  - deleting characters
+ - concatenating lines
  - inserting lines
  - deleting lines
  - navigation
