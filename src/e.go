@@ -343,7 +343,7 @@ func process_keypress() {
   } else if key_event.Ch != 0 {
     if mode == 1 { insert_rune(key_event); modified = true
     } else {
-      nineth_part := int((len(text_buffer)-1)/9)
+      eight_len := int((len(text_buffer)-1)/8)
       switch key_event.Ch {
         case 'q': termbox.Close(); os.Exit(0)
         case 'e': mode = 1
@@ -356,15 +356,15 @@ func process_keypress() {
         case 'l': pull_text_buffer()
         case 'h': highlight ^= 1
         case '0': current_row = 0; current_col = 0
-        case '1': current_row = nineth_part; current_col = 0
-        case '2': current_row = nineth_part*2; current_col = 0
-        case '3': current_row = nineth_part*3; current_col = 0
-        case '4': current_row = nineth_part*4; current_col = 0
-        case '5': current_row = nineth_part*5; current_col = 0
-        case '6': current_row = nineth_part*6; current_col = 0
-        case '7': current_row = nineth_part*7; current_col = 0
-        case '8': current_row = nineth_part*8; current_col = 0
-        case '9': current_row = nineth_part*9; current_col = 0
+        case '1': current_row = eight_len; current_col = 0
+        case '2': current_row = eight_len*2; current_col = 0
+        case '3': current_row = eight_len*3; current_col = 0
+        case '4': current_row = eight_len*4; current_col = 0
+        case '5': current_row = eight_len*5; current_col = 0
+        case '6': current_row = eight_len*6; current_col = 0
+        case '7': current_row = eight_len*7; current_col = 0
+        case '8': current_row = eight_len*8; current_col = 0
+        case '9': current_row = len(text_buffer)-1; current_col = 0
       }
     }
   } else {
