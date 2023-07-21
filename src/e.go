@@ -62,7 +62,7 @@ func write_file(filename string) {
   writer := bufio.NewWriter(file)
   for row, line := range text_buffer {
       new_line := "\n"
-      if row == len(text_buffer)-1 { new_line = "" }
+      if row == len(text_buffer) { new_line = "" }
       write_line := string(line) + new_line
       _, err = writer.WriteString(write_line)
       if err != nil { fmt.Println("Error:", err) }
