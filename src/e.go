@@ -204,6 +204,8 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
     termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
     index := strings.Index(next_token, "//")
     if index == 0 { *col += highlight_comment(*col, row) }
+    index = strings.Index(next_token, "/*")
+    if index == 0 { *col += highlight_comment(*col, row) }
   } else if ch == '#' {
     termbox.SetCell(*col+line_number_width, row, ch, termbox.ColorMagenta | termbox.AttrBold, termbox.ColorDefault)
     *col += highlight_comment(*col, row)
@@ -213,7 +215,7 @@ func highlight_syntax(col *int, row, text_buffer_col, text_buffer_row int) {
       "case", "catch", "class", "const", "continue", "def", "do",
       "elif", "else", "else:", "enum", "export", "extends", "extern",
       "finally", "float", "for", "from", "func", "function",
-      "global", "if", "import", "in", "int", "lambda", "try:", "except:",
+      "global", "if", "import", " in", "int", "lambda", "try:", "except:",
       "nil", "not", "null", "pass", "print", "raise", "return",
       "self", "short", "signed", "sizeof", "static", "struct", "switch",
       "this", "throw", "throws", "true", "True", "typedef", "typeof",
