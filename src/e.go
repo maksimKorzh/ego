@@ -166,7 +166,7 @@ func scroll_text_buffer() {
 func highlight_keyword(keyword string, col, row int) {
   for i := 0; i < len(keyword); i++ {
     ch := text_buffer[row+offset_row][col+offset_col+i]
-    termbox.SetCell(col+i+line_number_width, row, ch, termbox.ColorRed | termbox.AttrBold, termbox.ColorDefault);
+    termbox.SetCell(col+i+line_number_width, row, ch, termbox.ColorGreen | termbox.AttrBold, termbox.ColorDefault);
   }
 }
 
@@ -237,7 +237,7 @@ func display_text_buffer() {
       if text_buffer_row < len(text_buffer) {
         line_number_offset := line_number_width - len(strconv.Itoa(text_buffer_row+1))-1
         print_message(line_number_offset, row,
-        termbox.ColorGreen, termbox.ColorDefault, strconv.Itoa(text_buffer_row+1))
+        termbox.ColorCyan, termbox.ColorDefault, strconv.Itoa(text_buffer_row+1))
       };if text_buffer_row >= 0 &&  text_buffer_row < len(text_buffer) &&
          text_buffer_col < len(text_buffer[text_buffer_row]) {
         if text_buffer[text_buffer_row][text_buffer_col] != rune('\t') {
