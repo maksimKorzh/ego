@@ -1,5 +1,5 @@
 # EGO
-A bare bones cross-platform terminal based text editor written in Go
+A bare bones cross-platform terminal based text editor written in Go<br>
 THIS PROGECT HAS BEEN SUPERSEDED BY <a href="https://github.com/maksimKorzh/vici">VICI</a>
 
 # Screenshot
