@@ -1,5 +1,6 @@
 # EGO
 A bare bones cross-platform terminal based text editor written in Go
+THIS PROGECT HAS BEEN SUPERSEDED BY <a href="https://github.com/maksimKorzh/vici">VICI</a>
 
 # Screenshot
 ![IMAGE ALT TEXT HERE](https://raw.githubusercontent.com/maksimKorzh/ego/main/assets/ego.png)
